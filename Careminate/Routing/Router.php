@@ -1,6 +1,7 @@
 <?php
 namespace Careminate\Routing;
 
+use Careminate\Logs\Log;
 use Careminate\Http\Middlewares\Middleware;
 
 class Router implements RouterInterface
@@ -71,7 +72,6 @@ class Router implements RouterInterface
         $uri = empty($uri) ? '/' : $uri;
         $method = strtoupper($method);                        
 
-        // foreach (static::$routes[$method] as $key => $route) {
         foreach (static::$routes as $route) {
             if ($route['method'] == $method) {
                 $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[a-zA-Z0-9_]+)', $route['uri']);
@@ -104,7 +104,7 @@ class Router implements RouterInterface
                         //    var_dump($middlewareStack);
 
                         if (! method_exists($controller, $action)) {
-                            throw new \Exception("Action '$action' not found in controller '$controller'.");
+                            throw new Log("Action '$action' not found in controller '$controller'.");
                         }
 
                         // Prepare Data and add anonymous function to $next variable
@@ -123,7 +123,7 @@ class Router implements RouterInterface
             // var_dump($key, $route);
         }
 
-        throw new \Exception("This route '.$uri.' not found");
+        throw new Log("This route '.$uri.' not found");
     }
 
     /**

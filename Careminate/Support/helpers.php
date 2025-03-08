@@ -224,3 +224,10 @@ if (!function_exists('redirect')) {
         exit; // Ensure no further code is executed after the redirect
     }
 }
+
+if (! function_exists('storage_path')) {
+    function storage_path(?string $file = null)
+    {
+        return ! is_null($file) ? base_path('storage') . '/' . $file : '';
+    }
+}
