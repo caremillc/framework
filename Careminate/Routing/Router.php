@@ -33,7 +33,6 @@ class Router implements RouterInterface
             return;
         }
 
-                                 //$uri = ltrim($uri, '/' . static::public_path()); // Removes the /public/ prefix if it's part of the URI
         $uri = ltrim($uri, '/'); // Remove only the leading slash, not "/public/"
 
         foreach (static::$routes[$method] as $key => $val) {

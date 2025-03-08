@@ -3,6 +3,7 @@ namespace Careminate;
 
 use App\Http\Kernel;
 use Careminate\Routing\Route;
+use Careminate\Routing\Segment;
 
 class Application
 {
@@ -11,7 +12,14 @@ class Application
     public function start()
     {
         $this->router = new Route;
-        $this->webRoute();
+        // var_dump(Segment::get(1));
+        // var_dump(Segment::all());
+        if(Segment::get(1) == 'api'){
+            $this->apiRoute();
+        }else{
+            $this->webRoute();
+        }
+        
     }
 
     public function webRoute()
