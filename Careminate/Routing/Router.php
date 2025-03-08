@@ -5,90 +5,127 @@ use Careminate\Http\Middlewares\Middleware;
 
 class Router implements RouterInterface
 {
-    protected static $routes = [
-        'GET'     => [],
-        'POST'    => [],
-        'PUT'     => [],
-        'PATCH'   => [],
-        'DELETE'  => [],
-        'HEAD'    => [],
-        'OPTIONS' => [],
-    ];
-
-    public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
-    {
-        $route                         = ltrim($route, '/'); // Ensure we only remove the leading slash
-        self::$routes[$method][$route] = compact('controller', 'action', 'middleware');
-    }
+    protected static $routes = [];
+    protected static $groupAttributes = [];
 
     public function routes():array
     {
         return static::$routes;
     }
 
+    public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
+    {
+         $route          = self::applyGroupPrefix($route);
+         $middleware     = array_merge(static::getGroupMiddleware(), $middleware);
+        
+        self::$routes[] = [
+            'method'     => $method,
+            'uri'        => $route == '/' ? $route : ltrim($route, '/'),
+            'controller' => $controller,
+            'action'     => $action,
+            'middleware' => $middleware,
+        ];
+
+    }
+
+    public static function group($attributes, $callback): void
+    {
+        $previousGroupAttribute  = static::$groupAttributes;
+        static::$groupAttributes = array_merge(static::$groupAttributes, $attributes);
+        call_user_func($callback, new self);
+        static::$groupAttributes = $previousGroupAttribute;
+    }
+
+    protected static function applyGroupPrefix($route): string
+    {
+        if (isset(static::$groupAttributes['prefix'])) {
+            $full_route = rtrim(static::$groupAttributes['prefix'], '/') . '/' . ltrim($route, '/');
+            // echo"<pre>";
+            // var_dump($full_route);
+            return rtrim(ltrim($full_route, '/'), '/');
+        } else {
+            return $route;
+        }
+    }
+   
+    protected static function getGroupMiddleware(): array
+    {
+        // echo"<pre>";
+        // var_dump(static::$groupAttributes['middleware']?? []);
+        return static::$groupAttributes['middleware'] ?? [];
+    }
+	
+
     public static function dispatch(string $uri, string $method)
     {
+        // echo"<pre>";
+        // var_dump(static::$routes);
+        // exit;
+
         // Handle the favicon request early to avoid unnecessary processing
         if (self::handleFavicon($uri)) {
             return;
         }
 
         $uri = ltrim($uri, '/'); // Remove only the leading slash, not "/public/"
+        $uri = empty($uri) ? '/' : $uri;
+        $method = strtoupper($method);                        
 
-        foreach (static::$routes[$method] as $key => $val) {
-            $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[a-zA-Z0-9_]+)', $key);
-            $pattern = "#^$pattern$#";
+        // foreach (static::$routes[$method] as $key => $route) {
+        foreach (static::$routes as $route) {
+            if ($route['method'] == $method) {
+                $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[a-zA-Z0-9_]+)', $route['uri']);
+                $pattern = "#^$pattern$#";
 
-            if (preg_match($pattern, $uri, $matches)) {
-                $params     = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                $controller = $val['controller'];
+                if (preg_match($pattern, $uri, $matches)) {
+                    $params     = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                    $controller = $route['controller'];
 
-                // Check if controller is a callable object or class
-                if (is_object($controller)) {
-                    // Check if action exists in controller
-                    $val['middleware'] = $val['action'];
-                    $middlewareStack   = $val['middleware'];
+                    // Check if controller is a callable object or class
+                    if (is_object($controller)) {
+                        // Check if action exists in controller
+                        $route['middleware'] = $route['action'];
+                        $middlewareStack     = $route['middleware'];
 
-                    // Call object directly
-                    // Prepare Data and add anonymous function to $next variable
-                    $next = function ($request) use ($controller, $params) {
-                        return $controller(...$params);
-                    };
+                        // Call object directly
+                        // Prepare Data and add anonymous function to $next variable
+                        $next = function ($request) use ($controller, $params) {
+                            return $controller(...$params);
+                        };
 
-                    $next = Middleware::handleMiddleware($middlewareStack, $next);
+                        $next = Middleware::handleMiddleware($middlewareStack, $next);
+                        
+                        echo $next($uri);
+                    } else {
+                        // Check if action exists in controller
+                        $action          = $route['action'];
+                        $middlewareStack = $route['middleware'];
 
-                    return $next($uri);
-                } else {
-                    // Check if action exists in controller
-                    $action          = $val['action'];
-                    $middlewareStack = $val['middleware'];
+                        //    var_dump($middlewareStack);
 
-                    //    var_dump($middlewareStack);
+                        if (! method_exists($controller, $action)) {
+                            throw new \Exception("Action '$action' not found in controller '$controller'.");
+                        }
 
-                    if (! method_exists($controller, $action)) {
-                        throw new \Exception("Action '$action' not found in controller '$controller'.");
+                        // Prepare Data and add anonymous function to $next variable
+                        $next = function ($request) use ($controller, $action, $params) {
+                            return call_user_func_array([new $controller, $action], $params);
+                        };
+
+                        $next = Middleware::handleMiddleware($middlewareStack, $next);
+                        echo $next($uri);
                     }
 
-                    // Prepare Data and add anonymous function to $next variable
-                    $next = function ($request) use ($controller, $action, $params) {
-                        return call_user_func_array([new $controller, $action], $params);
-                    };
-
-                    $next = Middleware::handleMiddleware($middlewareStack, $next);
-
-                    return $next($uri);
+                    return '';
                 }
-
-                // return '';
             }
             // echo "<pre>";
-            // var_dump($key, $val);
+            // var_dump($key, $route);
         }
 
         throw new \Exception("This route '.$uri.' not found");
     }
 
-   
     /**
      * Handle the favicon.ico request
      *

@@ -2,6 +2,7 @@
 namespace Careminate\Http\Middlewares;
 
 use App\Http\Kernel;
+use Careminate\Routing\Segment;
 
 class Middleware
 {    
@@ -36,8 +37,9 @@ class Middleware
      * @param  mixed $type
      * @return void
      */
-    public static function getMiddlewareFromKernel($key, $type='web')
+    public static function getMiddlewareFromKernel($key)
     {
+        $type    = Segment::get(1) == 'api' ? 'api' : 'web';    //this  code
         if ($type == 'web' && isset(Kernel::$middlewareWebRoute[$key])) {
             // var_dump(Kernel::$middlewareWebRoute[$key]);
             return Kernel::$middlewareWebRoute[$key];
