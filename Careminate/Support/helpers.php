@@ -201,3 +201,26 @@ if (!function_exists('decrypt')) {
     }
 }
 
+if (!function_exists('url')) {
+    function url(string $url = ''): string
+    {
+        $scheme = isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http');
+        
+        // Ensure ROOT_DIR is defined properly or handle it better
+        return $scheme . '://' . $_SERVER['HTTP_HOST'] . (defined('ROOT_DIR') ? ROOT_DIR : '') . ltrim($url, '/');
+    }
+}
+
+if (!function_exists('redirect')) {
+    /**
+     * Redirect to a given URL.
+     *
+     * @param string $url The URL to redirect to.
+     * @return void
+     */
+    function redirect(string $url): void
+    {
+        header("Location: $url");
+        exit; // Ensure no further code is executed after the redirect
+    }
+}
