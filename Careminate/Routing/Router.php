@@ -1,7 +1,7 @@
 <?php
 namespace Careminate\Routing;
 
-class Router
+class Router implements RouterInterface
 {
 
     protected static $routes = [
@@ -14,6 +14,10 @@ class Router
         'OPTIONS' => [],
     ];
 
+    public function routes(): array
+    {
+        return static::$routes;
+    }
 
     public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
     {
@@ -21,16 +25,13 @@ class Router
         self::$routes[$method][$route] = compact('controller', 'action', 'middleware');
     }
 
-    public function routes(): array
-    {
-        return static::$routes;
-    }
+  
 
     public static function dispatch(string $uri, string $method)
     {
-  
-       $uri = ltrim($uri, '/'); // Remove only the leading slash, not "/public/"
-      
+        
+        $uri = ltrim($uri, '/'); // Remove only the leading slash, 
+
         foreach (static::$routes[$method] as $key => $val) {
 
             $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[a-zA-Z0-9_]+)', $key);

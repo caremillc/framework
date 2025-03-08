@@ -147,3 +147,57 @@ if (!function_exists('env')) {
         return $value;
     }
 }
+
+if (!function_exists('bcrypt')) {
+    /**
+     * Hash a string using bcrypt.
+     *
+     * @param string $str The string to hash.
+     * @return string The hashed string.
+     */
+    function bcrypt(string $str): string
+    {
+        return \Careminate\Hashes\Hash::make($str);
+    }
+}
+
+if (!function_exists('hash_check')) {
+    /**
+     * Check if a given password matches the hashed password.
+     *
+     * @param string $password The plain text password.
+     * @param string $hashedPassword The hashed password to check against.
+     * @return bool Whether the password matches the hashed value.
+     */
+    function hash_check(string $password, string $hashedPassword): bool
+    {
+        return \Careminate\Hashes\Hash::check($password, $hashedPassword);
+    }
+}
+
+if (!function_exists('encrypt')) {
+    /**
+     * Encrypt a string value.
+     *
+     * @param string $value The string to encrypt.
+     * @return string The encrypted string.
+     */
+    function encrypt(string $value): string
+    {
+        return \Careminate\Hashes\Hash::encrypt($value);
+    }
+}
+
+if (!function_exists('decrypt')) {
+    /**
+     * Decrypt a string value.
+     *
+     * @param string $value The encrypted string to decrypt.
+     * @return string The decrypted string.
+     */
+    function decrypt(string $value): string
+    {
+        return \Careminate\Hashes\Hash::decrypt($value);
+    }
+}
+

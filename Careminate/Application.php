@@ -1,6 +1,7 @@
-<?php 
+<?php
 namespace Careminate;
 
+use App\Http\Kernel;
 use Careminate\Routing\Route;
 
 class Application
@@ -9,17 +10,29 @@ class Application
 
     public function start()
     {
-        $router = new Route;
-
-       // var_dump(config('route.path'));
-        // Using require_once to avoid multiple inclusions
-         require_once route_path('web.php');
-
-         $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
-        
-        echo"<pre>";
-        var_dump($router->routes());
-
+        $this->router = new Route;
+        $this->webRoute();
     }
-	
+
+    public function webRoute()
+    {
+        foreach (Kernel::$globalWeb as $global) {
+            new $global();
+        }
+        include route_path('web.php');
+    }
+
+    public function apiRoute()
+    {
+        foreach (Kernel::$globalApi as $global) {
+            new $global();
+        }
+        include route_path('api.php');
+    }
+
+    public function __destruct()
+    {
+        $this->router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+    }
+
 }
