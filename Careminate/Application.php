@@ -17,8 +17,8 @@ class Application
 
          $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
         
-    //    echo"<pre>";
-    //     var_dump($router->routes());
+       echo"<pre>";
+        var_dump($router->routes());
 
     }
 	

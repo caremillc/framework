@@ -1,5 +1,41 @@
 <?php 
 
+if (!function_exists('public_path')) {
+    /**
+     * Get the full public path with an optional file.
+     *
+     * @param string|null $file The file path to append to the public path, or null for just the base public path.
+     * @return string The full public path.
+     */
+    function public_path(?string $file = null): string
+    {
+        return !empty($file) ? getcwd() . '/' . $file : getcwd();
+    }
+}
+
+if (!function_exists('asset')) {
+    /**
+     * Generate the full URL to an asset.
+     *
+     * @param string|null $file The asset file path or null for the root public path.
+     * @return string The full URL to the asset.
+     */
+    function asset(?string $file = null): string
+    {
+        // Get the public path using the previously defined public_path function
+        $publicPath = public_path($file);
+        
+        // Replace the base directory of the project with the public URL root
+        $relativePath = str_replace(getcwd() . '/', '/', $publicPath);
+        
+        // Get the base URL of the web server
+        $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+        
+        // Return the full URL to the asset
+        return $baseUrl . $relativePath;
+    }
+}
+
 if (!function_exists('base_path')) {
     /**
      * Get the base path with optional file.
@@ -49,3 +85,65 @@ if (!function_exists('config')) {
     }
 }
 
+if (!function_exists('value')) {
+    /**
+     * Resolve a value from a Closure or return the value directly.
+     * 
+     * Supports any callable type and allows passing parameters.
+     *
+     * @param mixed $value Value or callable to resolve
+     * @param mixed ...$args Arguments to pass to the callable
+     * @return mixed
+     */
+    function value($value, ...$args)
+    {
+        if (is_callable($value)) {
+            return $value(...$args);
+        }
+
+        return $value;
+    }
+}
+
+if (!function_exists('env')) {
+    /**
+     * Get an environment variable, or return the default value if not found.
+     *
+     * Supports various data types.
+     *
+     * @param string $key The name of the environment variable.
+     * @param mixed $default The default value to return if the environment variable is not found.
+     * @return mixed The value of the environment variable or the default value.
+     */
+    function env(string $key, $default = null)
+    {
+        $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+
+        if ($value === false || $value === null) {
+            return value($default);
+        }
+
+        $value = trim($value);
+        $lowerValue = strtolower($value);
+
+        // Handle special types
+        switch ($lowerValue) {
+            case 'true': return true;
+            case 'false': return false;
+            case 'null': return null;
+            case 'empty': return '';
+        }
+
+        // Handle numeric and JSON values
+        if (is_numeric($value)) {
+            return str_contains($value, '.') ? (float)$value : (int)$value;
+        }
+
+        if (preg_match('/^[\[\{].*[\]\}]$/', $value)) {
+            $decoded = json_decode($value, true);
+            return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+        }
+
+        return $value;
+    }
+}
