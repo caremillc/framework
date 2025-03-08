@@ -1,6 +1,8 @@
 <?php
 namespace Careminate\Routing;
 
+use Careminate\Http\Middlewares\Middleware;
+
 class Router implements RouterInterface
 {
     protected static $routes = [
@@ -12,7 +14,6 @@ class Router implements RouterInterface
         'HEAD'    => [],
         'OPTIONS' => [],
     ];
-
 
     public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
     {
@@ -32,9 +33,8 @@ class Router implements RouterInterface
             return;
         }
 
-        //$uri = ltrim($uri, '/' . static::public_path()); // Removes the /public/ prefix if it's part of the URI
-        $uri = ltrim($uri, '/');                         // Remove only the leading slash, not "/public/"
-                                                         
+                                 //$uri = ltrim($uri, '/' . static::public_path()); // Removes the /public/ prefix if it's part of the URI
+        $uri = ltrim($uri, '/'); // Remove only the leading slash, not "/public/"
 
         foreach (static::$routes[$method] as $key => $val) {
             $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[a-zA-Z0-9_]+)', $key);
@@ -56,7 +56,7 @@ class Router implements RouterInterface
                         return $controller(...$params);
                     };
 
-                    $next = self::handleMiddleware($middlewareStack, $next);
+                    $next = Middleware::handleMiddleware($middlewareStack, $next);
 
                     return $next($uri);
                 } else {
@@ -64,7 +64,7 @@ class Router implements RouterInterface
                     $action          = $val['action'];
                     $middlewareStack = $val['middleware'];
 
-                    //  var_dump($middlewareStack);
+                    //    var_dump($middlewareStack);
 
                     if (! method_exists($controller, $action)) {
                         throw new \Exception("Action '$action' not found in controller '$controller'.");
@@ -75,8 +75,8 @@ class Router implements RouterInterface
                         return call_user_func_array([new $controller, $action], $params);
                     };
 
-                    $next = self::handleMiddleware($middlewareStack, $next);
-                    
+                    $next = Middleware::handleMiddleware($middlewareStack, $next);
+
                     return $next($uri);
                 }
 
@@ -89,32 +89,7 @@ class Router implements RouterInterface
         throw new \Exception("This route '.$uri.' not found");
     }
 
-    /**
-     * handleMiddleware
-     *
-     * @param  mixed $middlewareStack
-     * @param  mixed $next
-     * @return void
-     */
-    public static function handleMiddleware($middlewareStack, $next)
-    {
-        if (! empty($middlewareStack) && is_array($middlewareStack)) {
-            foreach (array_reverse($middlewareStack) as $middleware) {
-
-                var_dump($middlewareStack);
-
-                $next = function ($request) use ($middleware, $next) {
-                    $role       = explode(',', $middleware);
-                    $middleware = array_shift($role);
-
-                    //var_dump($role);
-                    return (new $middleware)->handle($request, $next, $role);
-                };
-            }
-        }
-        return $next;
-    }
-
+   
     /**
      * Handle the favicon.ico request
      *
