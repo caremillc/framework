@@ -231,3 +231,17 @@ if (! function_exists('storage_path')) {
         return ! is_null($file) ? base_path('storage') . '/' . $file : '';
     }
 }
+
+if (!function_exists('view')) {
+    /**
+     * A simple helper function to load views
+     *
+     * @param string $view The view name
+     * @param array|null $data Optional data to pass to the view
+     * @return void
+     */
+    function view(string $view, ?array $data = [])
+    {
+        return \Careminate\Views\View::make($view, $data);
+    }
+}
