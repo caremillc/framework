@@ -8,20 +8,24 @@ use Careminate\Routing\Segment;
 class Application
 {
     protected $router;
+    protected $frameworksetting;
 
-    public function start()
+    public function start():void
     {
         $this->router = new Route;
         // var_dump(Segment::get(1));
         // var_dump(Segment::all());
+          //set timezone
+          $this->frameworksetting = new FrameworkSetting;   
+          $this->frameworksetting::setTimeZone(); 
         if(Segment::get(1) == 'api'){
             $this->apiRoute();
         }else{
             $this->webRoute();
-        }
-        
+        } 
     }
 
+    
     public function webRoute()
     {
         foreach (Kernel::$globalWeb as $global) {
