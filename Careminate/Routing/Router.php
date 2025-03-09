@@ -16,19 +16,6 @@ class Router implements RouterInterface
         return static::$routes;
     }
 
-    // public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
-    // {
-    //     $route = self::applyGroupPrefix($route);
-    //     $middleware = array_merge(static::getGroupMiddleware(), $middleware);
-
-    //     self::$routes[] = [
-    //         'method'     => $method,
-    //         'uri'        => $route == '/' ? $route : ltrim($route, '/'),
-    //         'controller' => $controller,
-    //         'action'     => $action,
-    //         'middleware' => $middleware,
-    //     ];
-    // }
 
     public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
     {
@@ -59,13 +46,6 @@ class Router implements RouterInterface
         static::$groupAttributes = $previousGroupAttributes;
     }
 
-    // protected static function applyGroupPrefix($route): string
-    // {
-    //     if (isset(static::$groupAttributes['prefix'])) {
-    //         return rtrim(static::$groupAttributes['prefix'], '/') . '/' . ltrim($route, '/');
-    //     }
-    //     return $route;
-    // }
 
     protected static function applyGroupPrefix($route): string
     {
@@ -91,6 +71,13 @@ class Router implements RouterInterface
 
     public static function dispatch(string $uri, string $method)
     {
+
+          // Handle the favicon request early to avoid unnecessary processing
+          if (self::handleFavicon($uri)) {
+            return;
+        }
+
+
         // Strip leading slashes to match the route correctly
         // dd($uri);
         $uri = ltrim($uri, '/');
@@ -138,5 +125,29 @@ class Router implements RouterInterface
 
         // If no matching route found
         throw new Log("Route not found: $uri");
+    }
+
+     /**
+     * Handle the favicon.ico request
+     *
+     * @param string $uri
+     * @return bool
+     */
+    private static function handleFavicon(string $uri)
+    {
+        if ($uri === 'favicon.ico') {
+            $faviconPath = ROOT_DIR . '/favicon.ico'; // Ensure ROOT_DIR is defined in your project
+            if (file_exists($faviconPath)) {
+                header('Content-Type: image/x-icon');
+                header('Cache-Control: public, max-age=86400'); // Cache for 24 hours
+                readfile($faviconPath);
+                exit;
+            } else {
+                header("HTTP/1.1 404 Not Found");
+                echo "Favicon not found";
+                exit;
+            }
+        }
+        return false; // Return false if the request is not for favicon.ico
     }
 }

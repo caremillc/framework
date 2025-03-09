@@ -17,7 +17,7 @@ class View
 
         // Set the cache directory from the configuration
         static::$cacheDir = config('view.cache_directory');
-        
+        // dd(static::$cacheDir);
         // Check if the cache directory exists, create it if not
         if (!is_dir(static::$cacheDir) && !mkdir(static::$cacheDir, 0755, true)) {
             // If directory creation fails, throw an exception

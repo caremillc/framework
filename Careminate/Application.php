@@ -23,7 +23,7 @@ class Application
         $this->router = new Route();
         $this->frameworksetting = new FrameworkSetting;
         $this->frameworksetting::setTimeZone();
-
+        // $this->frameworksetting::setLocale(config('app.locale'));
         $uri = parse_url($_SERVER['REQUEST_URI'])['path']; // Get the current URI directly
 
         // Check if the URI starts with '/api'
