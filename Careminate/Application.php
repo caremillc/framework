@@ -15,7 +15,6 @@ class Application
         $this->router           = new Route;
         $this->frameworksetting = new FrameworkSetting;
         $this->frameworksetting::setTimeZone();
-   
         if (parse_url(Segment::get(1))['path'] == 'api') {
             $this->apiRoute();
         } else {

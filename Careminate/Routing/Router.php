@@ -84,8 +84,8 @@ class Router implements RouterInterface
                     // Check if controller is a callable object or class
                     if (is_object($controller)) {
                         // Check if action exists in controller
-                        $route['middleware'] = $route['action'];
-                        $middlewareStack     = $route['middleware'];
+                        $middlewareStack = ! empty($route['action']) && ! empty($route['middleware']) ?
+                        array_merge($route['middleware'], $route['action']) : $route['middleware'];
 
                         // Call object directly
                         // Prepare Data and add anonymous function to $next variable
