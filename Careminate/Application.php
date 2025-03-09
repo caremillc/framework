@@ -10,22 +10,19 @@ class Application
     protected $router;
     protected $frameworksetting;
 
-    public function start():void
+    public function start(): void
     {
-        $this->router = new Route;
-        // var_dump(Segment::get(1));
-        // var_dump(Segment::all());
-          //set timezone
-          $this->frameworksetting = new FrameworkSetting;   
-          $this->frameworksetting::setTimeZone(); 
-        if(Segment::get(1) == 'api'){
+        $this->router           = new Route;
+        $this->frameworksetting = new FrameworkSetting;
+        $this->frameworksetting::setTimeZone();
+   
+        if (parse_url(Segment::get(1))['path'] == 'api') {
             $this->apiRoute();
-        }else{
+        } else {
             $this->webRoute();
-        } 
+        }
     }
 
-    
     public function webRoute()
     {
         foreach (Kernel::$globalWeb as $global) {
@@ -44,7 +41,7 @@ class Application
 
     public function __destruct()
     {
-        $this->router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+        $this->router->dispatch(parse_url($_SERVER['REQUEST_URI'])['path'], $_SERVER['REQUEST_METHOD']);
     }
 
 }

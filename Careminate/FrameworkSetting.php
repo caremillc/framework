@@ -1,6 +1,8 @@
 <?php 
 namespace Careminate;
 
+use Careminate\Sessions\Session;
+
 class FrameworkSetting
 {
    /**
@@ -43,5 +45,26 @@ class FrameworkSetting
         return in_array($timezone, timezone_identifiers_list());
     }
 
+/**
+     * change locale lang
+     * @param string $locale
+     * 
+     * @return string
+     */
+    public static function setLocale(string $locale):string
+    {
+    
+        Session::make('locale', $locale);
+   
+        return Session::get('locale');
+    }
 
+     /**
+     * get current locale lang 
+     * @return string
+     */
+    public static function getLocale(): string
+    {
+        return Session::has('locale') && !empty(Session::get('locale')) ?Session::get('locale'):config('app.locale');
+    }
 }
