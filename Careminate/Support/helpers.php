@@ -280,3 +280,18 @@ if (!function_exists('request')) {
         }
     }
 }
+
+if (!function_exists('csrf_token')) {
+    function csrf_token(): string
+    {
+        return \Careminate\Sessions\Session::get('csrf_token') ?? '';
+    }
+}
+
+if (!function_exists('csrf')) {
+    function csrf(): string
+    {
+        $token = \Careminate\Sessions\Session::get('csrf_token');
+        return $token ? '<input type="hidden" name="_token" value="' . $token . '" />' : '';
+    }
+}

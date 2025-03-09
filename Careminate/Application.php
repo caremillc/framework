@@ -1,37 +1,36 @@
-<?php 
+<?php
 namespace Careminate;
 
 use App\Http\Kernel;
 use Careminate\Routing\Route;
-use Careminate\Routing\Segment;
 use Careminate\FrameworkSetting;
+use Careminate\Http\Csrf\CsrfToken;
 use Careminate\ServiceProviders\LocaleService;
 
 class Application
 {
     protected $router;
     protected $frameworksetting;
-    protected LocaleService $localeService; // Add LocaleService dependency
+    protected LocaleService $localeService;
 
     public function __construct(LocaleService $localeService)
     {
-        $this->localeService = $localeService; // Inject the LocaleService
+        $this->localeService = $localeService;
     }
-    
+
     public function start(): void
     {
         $this->router = new Route();
         $this->frameworksetting = new FrameworkSetting;
         $this->frameworksetting::setTimeZone();
+        // Uncomment if you want locale set
         // $this->frameworksetting::setLocale(config('app.locale'));
-        $uri = parse_url($_SERVER['REQUEST_URI'])['path']; // Get the current URI directly
 
-        // Check if the URI starts with '/api'
-        if (strpos($uri, '/api') === 0) {
-            $this->apiRoute(); // Load API-specific routes
-        } else {
-            $this->webRoute(); // Otherwise, load web routes
-        }
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        CsrfToken::createCsrf(); // Ensure CSRF token is set
+
+        // Determine whether the request is for API or web
+        strpos($uri, '/api') === 0 ? $this->apiRoute() : $this->webRoute();
     }
 
     public function webRoute()
@@ -47,12 +46,11 @@ class Application
         foreach (Kernel::$globalApi as $global) {
             new $global();
         }
-        include route_path('api.php'); // Include API-specific routes
+        include route_path('api.php');
     }
 
     public function __destruct()
     {
-        // Dispatch the request to the appropriate controller and action
-        $this->router->dispatch(parse_url($_SERVER['REQUEST_URI'])['path'], $_SERVER['REQUEST_METHOD']);
+        $this->router->dispatch(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), $_SERVER['REQUEST_METHOD']);
     }
 }
