@@ -3,7 +3,7 @@ namespace Careminate\Http\Requests;
 
 use Careminate\Support\Arr;
 
-class Request 
+class Request extends FileRequest
 {
     private array $getParams;
     private array $postParams;
@@ -177,10 +177,10 @@ class Request
     /**
      * Get a file uploaded in the request
      */
-    public function file(string $key): ?array
-    {
-        return $this->files[$key] ?? null;
-    }
+    // public function file(string $key): ?array
+    // {
+    //     return $this->files[$key] ?? null;
+    // }
 
     /**
      * Check if a file is uploaded

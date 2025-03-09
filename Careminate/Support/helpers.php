@@ -1,5 +1,7 @@
 <?php 
 
+use Careminate\Http\Requests\Request;
+
 if (!function_exists('public_path')) {
     /**
      * Get the full public path with an optional file.
@@ -263,5 +265,18 @@ if (!function_exists('response')) {
         http_response_code($statusCode);
         echo $content;
         exit;
+    }
+}
+
+if (!function_exists('request')) {
+    function request(?string $name = null, mixed $default = null)
+    {
+        // Ensure you're working with the global request instance.
+        $request = Request::createFromGlobals();
+        if (empty($name)) {
+            return $request->all();
+        } else {
+            return $request->get($name, $default);
+        }
     }
 }
