@@ -1,9 +1,10 @@
-<?php
+<?php 
 namespace Careminate;
 
 use App\Http\Kernel;
 use Careminate\Routing\Route;
 use Careminate\Routing\Segment;
+use Careminate\FrameworkSetting;
 
 class Application
 {
@@ -12,13 +13,17 @@ class Application
 
     public function start(): void
     {
-        $this->router           = new Route;
+        $this->router = new Route();
         $this->frameworksetting = new FrameworkSetting;
         $this->frameworksetting::setTimeZone();
-        if (parse_url(Segment::get(1))['path'] == 'api') {
-            $this->apiRoute();
+
+        $uri = parse_url($_SERVER['REQUEST_URI'])['path']; // Get the current URI directly
+
+        // Check if the URI starts with '/api'
+        if (strpos($uri, '/api') === 0) {
+            $this->apiRoute(); // Load API-specific routes
         } else {
-            $this->webRoute();
+            $this->webRoute(); // Otherwise, load web routes
         }
     }
 
@@ -35,12 +40,12 @@ class Application
         foreach (Kernel::$globalApi as $global) {
             new $global();
         }
-        include route_path('api.php');
+        include route_path('api.php'); // Include API-specific routes
     }
 
     public function __destruct()
     {
+        // Dispatch the request to the appropriate controller and action
         $this->router->dispatch(parse_url($_SERVER['REQUEST_URI'])['path'], $_SERVER['REQUEST_METHOD']);
     }
-
 }
