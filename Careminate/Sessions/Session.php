@@ -5,16 +5,16 @@ use Careminate\Hashes\Hash;
 
 class Session implements SessionInterface
 {
-    public function __construct()
-    {
-       // var_dump(config('app.name'));
-       session_save_path(config('session.session_save_path'));
-       ini_set('session.gc_probability', 1);
-       session_start([
-           'cookie_lifetime' => config('session.expiration_timeout'),
-       ]);
-       Session::make('user','welcome');
-
+    public function __construct(){}
+ 
+    public static function start(){
+		if(session_status() === PHP_SESSION_NONE){
+			$handler = new SessionHandler(config('session.session_save_path'),config('session.session_prefix'));
+			$handler->gc(config('session.expiration_timeout'));
+			session_set_save_handler($handler,true);
+			session_name(config('session.session_prefix'));
+			session_start();
+		}
     }
     
     /**
@@ -26,6 +26,7 @@ class Session implements SessionInterface
      */
     public static function make(string $key, mixed $value = null): mixed
     {
+        static::start();
         if (! is_null($value)) {
             $_SESSION[$key] = Hash::encrypt($value);
         }
@@ -40,6 +41,7 @@ class Session implements SessionInterface
      */
     public static function has(string $key): bool
     {
+        static::start();
         return isset($_SESSION[$key]);
     }
     
@@ -52,6 +54,7 @@ class Session implements SessionInterface
      */
     public static function flash(string $key, mixed $value = null): mixed
     {
+        static::start();
         if (! is_null($value)) {
             $_SESSION[$key] = $value;
         }
@@ -68,11 +71,13 @@ class Session implements SessionInterface
      */
     public static function get(string $key): mixed
     {
+        static::start();
         return isset($_SESSION[$key]) ? Hash::decrypt($_SESSION[$key]) : $key;
     }
 
     public static function forget(string $key): void
     {
+        static::start();
         if (isset($_SESSION[$key])) {
             unset($_SESSION[$key]);
         }
@@ -85,6 +90,7 @@ class Session implements SessionInterface
      */
     public static function destroy(): void
     {
+        static::start();
         session_destroy();
     }
     
