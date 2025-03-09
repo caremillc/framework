@@ -3,13 +3,12 @@
 
 namespace Careminate\Routing;
 
-use Careminate\Logs\Log;
-use Careminate\Http\Response;
 use Careminate\Http\Middlewares\Middleware;
+use Careminate\Logs\Log;
 
 class Router implements RouterInterface
 {
-    protected static $routes = [];
+    protected static $routes          = [];
     protected static $groupAttributes = [];
 
     public function routes(): array
@@ -32,25 +31,25 @@ class Router implements RouterInterface
     // }
 
     public static function add(string $method, string $route, $controller, $action = null, array $middleware = [])
-{
-    // Handle controller defined as an array [Controller::class, 'action']
-    if (is_array($controller) && count($controller) === 2) {
-        list($controllerClass, $controllerAction) = $controller;
-        $controller = $controllerClass;
-        $action = $controllerAction;
+    {
+        // Handle controller defined as an array [Controller::class, 'action']
+        if (is_array($controller) && count($controller) === 2) {
+            list($controllerClass, $controllerAction) = $controller;
+            $controller                               = $controllerClass;
+            $action                                   = $controllerAction;
+        }
+
+        $route      = self::applyGroupPrefix($route);
+        $middleware = array_merge(static::getGroupMiddleware(), $middleware);
+
+        self::$routes[] = [
+            'method'     => $method,
+            'uri'        => $route === '/' ? $route : ltrim($route, '/'),
+            'controller' => $controller,
+            'action'     => $action,
+            'middleware' => $middleware,
+        ];
     }
-
-    $route = self::applyGroupPrefix($route);
-    $middleware = array_merge(static::getGroupMiddleware(), $middleware);
-
-    self::$routes[] = [
-        'method'     => $method,
-        'uri'        => $route === '/' ? $route : ltrim($route, '/'),
-        'controller' => $controller,
-        'action'     => $action,
-        'middleware' => $middleware,
-    ];
-}
 
     public static function group($attributes, $callback): void
     {
@@ -69,21 +68,21 @@ class Router implements RouterInterface
     // }
 
     protected static function applyGroupPrefix($route): string
-{
-    if (isset(static::$groupAttributes['prefix'])) {
-        $prefix = rtrim(static::$groupAttributes['prefix'], '/');
-        $routePart = ltrim($route, '/');
+    {
+        if (isset(static::$groupAttributes['prefix'])) {
+            $prefix    = rtrim(static::$groupAttributes['prefix'], '/');
+            $routePart = ltrim($route, '/');
 
-        // Handle the root route correctly
-        if ($route === '/') {
-            $routePart = '';
+            // Handle the root route correctly
+            if ($route === '/') {
+                $routePart = '';
+            }
+
+            $combined = $prefix . ($routePart !== '' ? '/' . $routePart : '');
+            return $combined === '' ? '/' : $combined;
         }
-
-        $combined = $prefix . ($routePart !== '' ? '/' . $routePart : '');
-        return $combined === '' ? '/' : $combined;
+        return $route;
     }
-    return $route;
-}
 
     protected static function getGroupMiddleware(): array
     {
@@ -105,13 +104,13 @@ class Router implements RouterInterface
                 $pattern = "#^$pattern$#";
 
                 if (preg_match($pattern, $uri, $matches)) {
-                    $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                    $params     = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                     $controller = $route['controller'];
 
                     // Handle closures
                     if ($controller instanceof \Closure) {
                         $middlewareStack = array_merge($route['middleware'], $route['action'] ?? []);
-                        $next = function ($uri) use ($controller, $params) {
+                        $next            = function ($uri) use ($controller, $params) {
                             echo $controller(...$params);
                         };
                         $next = Middleware::handleMiddleware($middlewareStack, $next);
@@ -119,7 +118,7 @@ class Router implements RouterInterface
                     }
 
                     // Handle class-based controllers
-                    $action = $route['action'];
+                    $action          = $route['action'];
                     $middlewareStack = $route['middleware'];
 
                     if (! method_exists($controller, $action)) {

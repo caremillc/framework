@@ -245,3 +245,23 @@ if (!function_exists('view')) {
         return \Careminate\Views\View::make($view, $data);
     }
 }
+
+if (!function_exists('trans')) {
+    function trans(?string $trans = null, array|null $attributes = []): string|object
+    {
+        // Return a translation or an instance of the Lang class for chaining.
+        if ($trans) {
+            return \Careminate\Localization\Lang::get($trans, $attributes);
+        }
+        return new \Careminate\Localization\Lang;
+    }
+}
+
+if (!function_exists('response')) {
+    function response(string $content, int $statusCode = 200)
+    {
+        http_response_code($statusCode);
+        echo $content;
+        exit;
+    }
+}

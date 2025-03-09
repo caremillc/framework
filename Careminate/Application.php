@@ -5,12 +5,19 @@ use App\Http\Kernel;
 use Careminate\Routing\Route;
 use Careminate\Routing\Segment;
 use Careminate\FrameworkSetting;
+use Careminate\ServiceProviders\LocaleService;
 
 class Application
 {
     protected $router;
     protected $frameworksetting;
+    protected LocaleService $localeService; // Add LocaleService dependency
 
+    public function __construct(LocaleService $localeService)
+    {
+        $this->localeService = $localeService; // Inject the LocaleService
+    }
+    
     public function start(): void
     {
         $this->router = new Route();
