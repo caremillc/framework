@@ -2,18 +2,40 @@
 namespace Careminate\Databases;
 
 use PDO;
+use Careminate\Databases\Drivers\MySQLConnection;
+use Careminate\Databases\Drivers\SQLiteConnection;
 use Careminate\Databases\Contracts\DatabaseConnectionInterface;
 
 abstract class BaseModel
 {
     protected static PDO $db;
     protected $table;
-    protected static $attributes = [];
+    protected $attributes = [];
 
-    public function __construct(DatabaseConnectionInterface $connect)
+    public function __construct()
     {
-        self::$db = $connect->getPDO();
+        self::initializeDB();
     }
+    
+    protected static function initializeDB()
+    {
+        if (!isset(self::$db)) {
+            $driver = config('database.driver');
+            $drivers = config('database.drivers');
+            switch ($driver) {
+                case 'mysql':
+                    $connection = new MySQLConnection();
+                    break;
+                case 'sqlite':
+                    $connection = new SQLiteConnection();
+                    break;
+                default:
+                    throw new \RuntimeException("Unsupported database driver: {$driver}");
+            }
+            self::$db = $connection->getPDO();
+        }
+    }
+
 
     /**
      * get database driver settings
@@ -25,11 +47,15 @@ abstract class BaseModel
         return (object) config('database.drivers')[$driver];
     }
 
-    public static function setAttributes($attributes)
-    {
-        self::$attributes = $attributes;
-    }
+    // public static function setAttributes($attributes)
+    // {
+    //     self::$attributes = $attributes;
+    // }
 
+    public function setAttributes($attributes)
+    {
+        $this->attributes = $attributes;
+    }
 
 
     /**
@@ -38,9 +64,14 @@ abstract class BaseModel
      *
      * @return mixed
      */
+    // public function __get($name): mixed
+    // {
+    //     return self::$attributes[$name] ?? null;
+    // }
+
     public function __get($name): mixed
     {
-        return self::$attributes[$name] ?? null;
+        return $this->attributes[$name] ?? null;
     }
 
     /**
@@ -50,8 +81,13 @@ abstract class BaseModel
      *
      * @return void
      */
+    // public function __set(string $name, $value): void
+    // {
+    //     self::$attributes[$name] = $value;
+    // }
+
     public function __set(string $name, $value): void
     {
-        self::$attributes[$name] = $value;
+        $this->attributes[$name] = $value;
     }
 }

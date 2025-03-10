@@ -14,11 +14,12 @@ class Collection implements \IteratorAggregate, \Countable
     {
         return count($this->items);
     }
-
+   
     public function toArray()
     {
         return array_map(function ($item) {
-            return get_object_vars($item);
+            return method_exists($item, 'toArray') ? $item->toArray() : (array)$item;
         }, $this->items);
     }
+
 }

@@ -3,8 +3,9 @@
 
 namespace Careminate\Routing;
 
-use Careminate\Http\Middlewares\Middleware;
 use Careminate\Logs\Log;
+use Careminate\Http\Requests\Request;
+use Careminate\Http\Middlewares\Middleware;
 
 class Router implements RouterInterface
 {
@@ -105,20 +106,24 @@ class Router implements RouterInterface
                     }
 
                     // Handle class-based controllers
-                    $action          = $route['action'];
-                    $middlewareStack = $route['middleware'];
+                    // Handle class-based controllers
+                $action = $route['action'];
+                $middlewareStack = $route['middleware'];
 
-                    if (! method_exists($controller, $action)) {
-                        throw new Log("Action '$action' not found in controller '$controller'.");
-                    }
+                if (!method_exists($controller, $action)) {
+                    throw new Log("Action '$action' not found in controller '$controller'.");
+                }
+                    // Use reflection to resolve method parameters
+                $reflectionMethod = new \ReflectionMethod($controller, $action);
+                $resolvedParams = self::resolveMethodParameters($reflectionMethod, $params);
 
-                    // Prepare the next middleware call
-                    $next = function ($uri) use ($controller, $action, $params) {
-                        echo call_user_func_array([new $controller, $action], $params);
-                    };
+                // Prepare the next middleware call
+                $next = function ($uri) use ($controller, $action, $resolvedParams) {
+                    echo call_user_func_array([new $controller, $action], $resolvedParams);
+                };
 
-                    $next = Middleware::handleMiddleware($middlewareStack, $next);
-                    return $next($uri);
+                $next = Middleware::handleMiddleware($middlewareStack, $next);
+                return $next($uri);
                 }
             }
         }
@@ -127,6 +132,39 @@ class Router implements RouterInterface
         throw new Log("Route not found: $uri");
     }
 
+     /**
+     * Resolve method parameters, injecting Request where required.
+     */
+    protected static function resolveMethodParameters(\ReflectionMethod $method, array $routeParams): array
+    {
+        $parameters = [];
+        foreach ($method->getParameters() as $param) {
+            $paramType = $param->getType();
+            if ($paramType && !$paramType->isBuiltin()) {
+                $paramClass = $paramType->getName();
+                if ($paramClass === Request::class || is_subclass_of($paramClass, Request::class)) {
+                    // Inject the Request instance
+                    $parameters[] = new Request();
+                } else {
+                    // Handle other dependencies if possible
+                    throw new Log("Cannot resolve dependency {$paramClass}.");
+                }
+            } else {
+                // Get route parameter by name
+                $paramName = $param->getName();
+                if (array_key_exists($paramName, $routeParams)) {
+                    $parameters[] = $routeParams[$paramName];
+                } elseif ($param->isDefaultValueAvailable()) {
+                    // Use default value if available
+                    $parameters[] = $param->getDefaultValue();
+                } else {
+                    throw new Log("Missing required parameter '{$paramName}' for {$method->class}::{$method->name}()");
+                }
+            }
+        }
+        return $parameters;
+    }
+    
      /**
      * Handle the favicon.ico request
      *

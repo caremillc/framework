@@ -1,12 +1,12 @@
-<?php 
+<?php
 namespace Careminate\Databases\QueryBuilder;
 
 trait DBCondition
 {
 
     //protected static $conditions = [];
-    protected static $columns = ['*'];
-    protected static ?int $limit = null;
+    protected static $columns     = ['*'];
+    protected static ?int $limit  = null;
     protected static ?int $offset = null;
 
     /**
@@ -17,16 +17,34 @@ trait DBCondition
      *
      * @return static
      */
+
     public static function where(string $column, string $operator, $value = null): static
     {
-        $my_operators = in_array($operator, ['=', 'LIKE']);
+        if ($value === null) {
+            $value    = $operator;
+            $operator = '=';
+        }
+
+        $validOperators = ['=', '<>', '!=', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE'];
+        if (! in_array($operator, $validOperators)) {
+            throw new \InvalidArgumentException("Invalid operator: {$operator}");
+        }
+
         static::$conditions[] = [
-            'column' => $column,
-            'operator' =>  $my_operators ? $operator : '=',
-            'value' => ! $my_operators ? $operator : $value
+            'column'   => $column,
+            'operator' => $operator,
+            'value'    => $value,
         ];
         return new static;
     }
+
+    protected static function resetConditions()
+{
+    static::$conditions = [];
+    static::$columns = ['*'];
+    static::$limit = null;
+    static::$offset = null;
+}
 
     /**
      * @param int $limit
@@ -38,7 +56,6 @@ trait DBCondition
         static::$limit = $limit;
         return new static;
     }
-
 
     /**
      * @param int $take
@@ -68,22 +85,22 @@ trait DBCondition
      */
     public static function buildSelectQuery(array $columns = [], ?int $limit = null, ?int $offset = null): string
     {
-        $table = static::getTable();
-        $columns = !empty($columns) && count($columns) > 0 ? implode(',', $columns) : implode(',', static::$columns);
-        $query = 'SELECT ' . $columns . ' FROM ' . $table;
+        $table   = static::getTable();
+        $columns = ! empty($columns) && count($columns) > 0 ? implode(',', $columns) : implode(',', static::$columns);
+        $query   = 'SELECT ' . $columns . ' FROM ' . $table;
         if (static::$conditions) {
             $conditions = array_map(fn($condition) => "{$condition['column']} {$condition['operator']} ?", static::$conditions);
             $query .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        static::$limit = !empty($limit) && $limit > 0 ? $limit : static::$limit;
-        static::$offset = !empty($offset) && $offset > 0 ? $offset : static::$offset;
-        
-        if (!is_null(static::$limit)) {
+        static::$limit  = ! empty($limit) && $limit > 0 ? $limit: static::$limit;
+        static::$offset = ! empty($offset) && $offset > 0 ? $offset: static::$offset;
+
+        if (! is_null(static::$limit)) {
             $query .= ' LIMIT ' . static::$limit;
         }
 
-        if (!is_null(static::$offset)) {
+        if (! is_null(static::$offset)) {
             $query .= ' OFFSET ' . static::$offset;
         }
 
@@ -96,6 +113,6 @@ trait DBCondition
      */
     public static function getConditionValues(): array
     {
-        return  array_map(fn($condition) => $condition['value'], static::$conditions);
+        return array_map(fn($condition) => $condition['value'], static::$conditions);
     }
 }

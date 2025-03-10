@@ -1,10 +1,9 @@
-<?php 
+<?php
 namespace Careminate\Databases\Drivers;
 
-use PDO;
-use Exception;
-use Careminate\Logs\Log;
 use Careminate\Databases\Contracts\DatabaseConnectionInterface;
+use Exception;
+use PDO;
 
 class MySQLConnection implements DatabaseConnectionInterface
 {
@@ -18,23 +17,22 @@ class MySQLConnection implements DatabaseConnectionInterface
 
     public function __construct()
     {
-        $config = config('database.drivers');
-// var_dump($config);
-        $this->port = $config['mysql']['port'];
-        $this->host = $config['mysql']['host'] . ':' . $this->port;
+        $config         = config('database.drivers');
+        $this->host     = $config['mysql']['host'];
+        $this->port     = $config['mysql']['port'];
         $this->database = $config['mysql']['database'];
-        $this->charset = $config['mysql']['charset'];
+        $this->charset  = $config['mysql']['charset'];
         $this->username = $config['mysql']['username'];
         $this->password = $config['mysql']['password'];
         try {
-            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->database . ";charset=" . $this->charset;
+            $dsn       = "mysql:host={$this->host};port={$this->port};dbname={$this->database};charset={$this->charset}";
             $this->pdo = new PDO($dsn, $this->username, $this->password);
-            $this->pdo->setAttribute($config['mysql']['ERRMODE'], $config['mysql']['EXCEPTION']);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Use constants directly
         } catch (Exception $e) {
-            throw new Log($e->getMessage());
+            error_log($e->getMessage()); // Or use a logging class
+            throw new \RuntimeException("Database connection error: " . $e->getMessage(), 0, $e);
         }
     }
-
 
     public function getPDO(): PDO
     {

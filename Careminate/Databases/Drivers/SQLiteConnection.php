@@ -18,8 +18,9 @@ class SQLiteConnection implements DatabaseConnectionInterface
         try {
             $this->pdo = new PDO($dsn);
             $this->pdo->setAttribute($config['sqlite']['ERRMODE'], $config['sqlite']['EXCEPTION']);
-        } catch (\Exception $e) {
-            throw new Log($e->getMessage());
+        }catch (\Exception $e) {
+            error_log($e->getMessage()); // Or use a logging class
+            throw new \RuntimeException("Database connection error: " . $e->getMessage(), 0, $e);
         }
     }
 
