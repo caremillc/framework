@@ -323,4 +323,6 @@ class Request extends FileRequest
     public function isDelete(): bool { return $this->isMethod('DELETE'); }
     public function isHead(): bool { return $this->isMethod('HEAD'); }
     public function isOptions(): bool { return $this->isMethod('OPTIONS'); }
+
+    
 }
