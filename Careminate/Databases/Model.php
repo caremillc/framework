@@ -1,22 +1,25 @@
 <?php
 namespace Careminate\Databases;
 
-use Careminate\Databases\Drivers\MySQLConnection;
-use Careminate\Databases\Drivers\SQLiteConnection;
 use Careminate\Logs\Log;
+use Careminate\Databases\Drivers\MySQLConnection;
+use Careminate\Databases\QueryBuilder\DBSelector;
+use Careminate\Databases\Drivers\SQLiteConnection;
+use Careminate\Databases\QueryBuilder\DBCondition;
 
 class Model extends BaseModel
 {
-    // use DBConditions, DBSelector;
+    use DBCondition, DBSelector;
+
     public function __construct()
     {
         $config = config('database.driver');
         if ($config == 'mysql') {
             parent::__construct(new MySQLConnection());
-            echo "mysql connection is on ";
+            //echo "MySQL connection is on ";
         } elseif ($config == 'sqlite') {
             parent::__construct(new SQLiteConnection());
-            echo "sqlite connection is on ";
+           // echo "SQLite connection is on ";
         } else {
             throw new Log('Database driver not supported');
         }
@@ -25,10 +28,13 @@ class Model extends BaseModel
     public static function getTable()
     {
         $class = new static;
-        if ($class->table == null) {
-            $class->table = strtolower((new \ReflectionClass(static::class))->getShortName()) . 's';
+        // Check if the 'table' property is set
+        if (isset($class->table)) {
+            return $class->table;
+        } else {
+            // Generate a default table name based on the class name
+            return strtolower((new \ReflectionClass(static::class))->getShortName()) . 's';
         }
-        return $class->table;
     }
 
     public function toArray()
@@ -36,3 +42,4 @@ class Model extends BaseModel
         return (array) static::$attributes;
     }
 }
+ 
