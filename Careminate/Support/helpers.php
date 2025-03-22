@@ -1,5 +1,7 @@
 <?php 
 
+use Careminate\Http\Responses\Response;
+
 if (!function_exists('value')) {
     /**
      * Resolve a value from a Closure or return the value directly.
@@ -82,3 +84,22 @@ if (! function_exists('required_env')) {
     }
 }
 
+if (!function_exists('view')) {
+    function view(string $template, array $parameters = [], ?Response $response = null): Response
+    {
+        // Access the global container
+        global $container;
+
+        // Make sure the container is set
+        if (!isset($container)) {
+            throw new RuntimeException('Container is not set.');
+        }
+
+        $content = $container->get('twig')->render($template, $parameters);
+
+        $response ??= new Response();
+        $response->setContent($content);
+
+        return $response;
+    }
+}
