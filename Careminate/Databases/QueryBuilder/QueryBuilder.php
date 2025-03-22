@@ -12,10 +12,12 @@ class QueryBuilder
     private ?int $limit = null;
     private ?int $offset = null;
     private string $table;
+    private Connection $connection;
 
-    public function __construct(string $table)
+    public function __construct(string $table, Connection $connection)
     {
         $this->table = $table;
+        $this->connection = $connection;
     }
 
     public function select(array $columns = ['*']): self
@@ -49,12 +51,29 @@ class QueryBuilder
         $sql .= $this->buildWhereClause();
         $sql .= $this->buildLimitOffset();
 
-        $stmt = Connection::getInstance()->prepare($sql);
+        $stmt = $this->connection->prepare($sql);
         $stmt->execute($this->bindings);
-        
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Add other methods (first(), count(), etc) following similar pattern
-}
+    private function buildWhereClause(): string
+    {
+        // Build WHERE clause based on added conditions
+        $where = [];
+        foreach ($this->wheres as $whereCondition) {
+            $where[] = "{$whereCondition['column']} {$whereCondition['operator']} :{$whereCondition['column']}";
+        }
 
+        return $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    }
+
+    private function buildLimitOffset(): string
+    {
+        $limit = $this->limit ? " LIMIT {$this->limit}" : '';
+        $offset = $this->offset ? " OFFSET {$this->offset}" : '';
+        return $limit . $offset;
+    }
+
+    // Additional methods for other operations like first(), count(), etc.
+}
