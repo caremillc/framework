@@ -117,7 +117,7 @@ class Request
 
     public function getPathInfo(): string
     {
-        return parse_url($this->server['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+        return parse_url($this->server['REQUEST_URI'] ?? '?', PHP_URL_PATH) ?? '';
     }
 
     public function get(string $key, mixed $default = null): mixed
