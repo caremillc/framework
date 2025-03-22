@@ -1,6 +1,7 @@
 <?php
 namespace Careminate\Http;
 
+use Doctrine\DBAL\Connection;
 use Careminate\Http\Requests\Request;
 use Careminate\Routing\HttpException;
 use Psr\Container\ContainerInterface;
@@ -38,8 +39,9 @@ class Kernel
     {
         try {
 
+            // dd($this->container->get(Connection::class));
             [$routeHandler, $vars] = $this->router->dispatch($request, $this->container);
-
+       
             $response = call_user_func_array($routeHandler, $vars);
 
         } catch (\Exception $exception) {
@@ -71,4 +73,3 @@ class Kernel
 	}
 
 }
-
