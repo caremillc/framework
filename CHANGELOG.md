@@ -6,28 +6,28 @@ All notable changes to the Careminate framework are documented in this file.
 
 ### Added
 
-- PSR-11-compatible dependency-injection container.
-- Public container registration and resolution contracts.
-- Transient, singleton, and scoped service lifetimes.
-- Independent scoped containers for request and worker isolation.
-- Contextual service and primitive bindings.
-- Explicit aliases and tagged-service collections.
-- Reflection-based constructor autowiring.
-- `Inject`, `Tagged`, and `Lazy` dependency attributes.
-- Callable, object, and container-managed factory services.
-- Native PHP 8.4 lazy proxies.
-- Circular dependency and alias-cycle detection.
-- Resolution-path diagnostics.
-- Exportable container definition snapshots.
-- Executable PHP container cache.
-- Frozen compiled containers.
-- Container unit and application integration tests.
+- Contract-first application-kernel lifecycle.
+- Explicit application state machine.
+- Ordered and duplicate-safe bootstrap sequence.
+- Immutable environment representation.
+- Secure production environment defaults.
+- Cross-platform application path management.
+- Generic runtime and kernel contracts.
+- Console runtime adapter.
+- Initial HTTP runtime adapter.
+- Independent dependency scope for each runtime execution.
+- Runtime-specific kernel registry.
+- Guaranteed kernel and runtime cleanup.
+- Graceful termination requests.
+- Ordered application termination hooks.
+- Aggregated termination failure reporting.
+- Application builder.
+- Production container optimizer.
+- Optimization duration, memory, and cache-size reporting.
+- Application lifecycle and integration tests.
 
 ### Changed
 
-- Minimum supported PHP version corrected to PHP 8.4.
-- PHPUnit development baseline updated to PHPUnit 12.5.
-- PHPStan analysis target corrected to PHP 8.4.
-- Framework development version updated to `0.2.0-dev`.
+- Framework development version updated to `0.3.0-dev`.
+- Root application path-package version updated to `0.3.0-dev`.
 ---
-
