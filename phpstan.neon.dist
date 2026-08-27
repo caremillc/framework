@@ -1,0 +1,15 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+
+parameters:
+    level: max
+
+    paths:
+        - src
+        - tests
+
+    phpVersion: 80200
+    tmpDir: build/phpstan
+
+    reportUnmatchedIgnoredErrors: true
+    treatPhpDocTypesAsCertain: true
