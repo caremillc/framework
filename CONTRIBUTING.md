@@ -2,7 +2,7 @@
 
 ## Runtime requirements
 
-Careminate requires PHP 8.2 or newer and Composer 2.
+Careminate requires PHP 8.4 or newer and Composer 2.
 
 ## Development installation
 
@@ -16,44 +16,40 @@ composer update
 ---
 
 ## Required checks
-
-Run the complete quality pipeline before submitting a change:
 ```powershell
 composer quality
 composer audit
 ```
----
 
-The quality pipeline executes:
-1. PHPUnit tests.
-2. PHPStan at level max.
-3. PHP-CS-Fixer in dry-run mode.
-4. Rector in dry-run mode.
-5. Applying automated changes
+## The quality pipeline executes:
 
-Apply coding-standard corrections:
-```powershell
-composer cs:fix
-```
+- PHPUnit 12 tests.
+- PHPStan at level max.
+- PHP-CS-Fixer in dry-run mode.
+- Rector in dry-run mode.
+- Container contribution rules
+- Public application code should depend on container contracts.
+- Avoid injecting the container into application services.
+- Use constructor injection for application dependencies.
+- Use explicit contextual bindings for primitive values.
+- Duplicate service registrations are rejected.
+- Use replace() only when an override is deliberate.
+- Scoped services must not escape their scope.
+- Close long-running request and job scopes in finally blocks.
+- Callable and object factories are runtime-only and cannot be compiled.
+- Compilable services must use class names, factory-service class names, or scalar and array values.
+- Do not cache secret values in a web-writable directory.
+- Do not edit generated container-cache files manually.
 
-Apply reviewed Rector transformations:
-```powershell
-composer refactor
-```
 
-Always inspect automated changes and rerun composer quality.
-
-Engineering rules
+## Engineering rules
 - Every PHP source file must declare strict types.
 - Follow PSR-12.
-- Use constructor injection for object dependencies.
-- Avoid service locators and hidden global state.
+- Avoid service locators in application code.
 - Do not create dynamic object properties.
-- Use precise domain-specific exceptions.
-- Declare classes final unless inheritance is explicitly part of the design.
-- Add tests for success paths, failure paths, and relevant edge cases.
-- Do not introduce network-service requirements into unit tests.
-- Do not suppress PHPStan errors without a documented architectural reason.
-- Record material architecture decisions in docs/adr.
+- Use precise framework exceptions.
+- Add success, failure, lifecycle, and regression tests.
+- Do not suppress PHPStan errors without a documented reason.
+- Record material architectural changes in docs/adr.
 
 ---

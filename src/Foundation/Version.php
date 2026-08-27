@@ -6,11 +6,11 @@ namespace Careminate\Foundation;
 
 final class Version
 {
-    public const CURRENT = '0.1.0-dev';
+    public const CURRENT = '0.2.0-dev';
 
     public const MAJOR = 0;
 
-    public const MINOR = 1;
+    public const MINOR = 2;
 
     public const PATCH = 0;
 

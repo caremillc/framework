@@ -2,20 +2,16 @@
 
 ## Status
 
-Complete after all acceptance commands pass.
+Implemented. Runtime compatibility corrected during Phase 2.
 
 ## Purpose
 
 Phase 1 creates the engineering controls and low-level conventions required
 before runtime framework subsystems are implemented.
 
-It deliberately avoids introducing application lifecycle, dependency
-injection, configuration, HTTP, routing, middleware, persistence, logging, or
-events.
-
 ## Runtime baseline
 
-The minimum supported version is PHP 8.2.
+The minimum supported version is PHP 8.4.
 
 Every framework PHP file must:
 
@@ -35,8 +31,6 @@ The repository contains two Composer packages:
 2. `caremillc/framework` is the reusable framework library.
 
 The application consumes the framework through a Composer path repository.
-This exercises the same package boundary expected when the framework is later
-installed from a package registry.
 
 ## Namespace policy
 
@@ -45,15 +39,12 @@ installed from a package registry.
 - Application production namespace: `Caremi\`
 - Application test namespace: `Caremi\Tests\`
 
-A class must be stored at the PSR-4 path corresponding to its fully qualified
-class name.
-
 ## Extension policy
 
 Classes are final by default.
 
 A class may remain extensible when inheritance is an intentional part of the
-public design. Foundational exception classes are extensible because future
+public design. Foundational exception classes are extensible because framework
 subsystems derive precise exceptions from them.
 
 ## Exception policy
@@ -62,79 +53,56 @@ Every exception owned by the framework implements:
 
 `Careminate\Exception\ExceptionInterface`
 
-Framework callers can catch either:
-
-- the precise subsystem exception;
-- an appropriate native exception category;
-- the Careminate marker interface.
-
-Future subsystems must prefer precise exception types over generic runtime
-exceptions.
+Subsystem exceptions should preserve an appropriate native or PSR exception
+contract where one exists.
 
 ## Support utility policy
 
-Support utilities are:
-
-- stateless;
-- final;
-- non-instantiable;
-- deterministic;
-- free of service-container access;
-- tested for Windows and POSIX behavior where applicable.
-
-The lexical path-containment utility does not resolve symbolic links.
-Security-sensitive filesystem operations must validate existing paths with
-`realpath()` before accessing them.
+Support utilities are stateless, final, non-instantiable, deterministic,
+free of container access, and tested for Windows and POSIX behavior.
 
 ## Quality gates
 
 The framework has four mandatory automated gates:
 
-1. PHPUnit tests.
+1. PHPUnit 12.
 2. PHPStan at level `max`.
 3. PHP-CS-Fixer dry-run.
 4. Rector dry-run.
 
-CI also runs Composer package validation and dependency auditing.
-
-No PHPStan baseline is permitted during the foundation phase. New code must
-pass at the configured level without ignored errors.
+CI also runs Composer validation and dependency auditing.
 
 ## Lock-file policy
 
-The root application must commit its generated `composer.lock` for
-reproducible deployments.
+The root application commits `composer.lock` for reproducible deployments.
 
-The nested reusable framework package does not commit
-`framework/composer.lock`. Its CI pipeline resolves dependencies within the
-declared compatibility ranges.
+The nested framework package does not commit `framework/composer.lock`.
 
-## Phase boundary
+## Compatibility correction
 
-The following features are intentionally deferred:
+The initial Phase 1 response specified PHP 8.2. The project master
+specification requires PHP 8.4 and newer stable versions.
 
-- PSR-11 container contracts and implementation;
-- application bootstrap and lifecycle;
-- service providers;
-- module discovery and activation;
-- configuration and environment loading;
-- HTTP request and response abstractions;
-- routing and middleware;
-- controller dispatch;
-- logging and events;
-- database access.
+Phase 2 corrects:
+
+- both Composer PHP constraints;
+- PHPUnit dependencies and schemas;
+- PHPStan's target version;
+- PHP-CS-Fixer's migration set;
+- CI runtime matrices;
+- documentation.
 
 ## Acceptance criteria
 
-Phase 1 is accepted when:
+Phase 1 remains accepted when:
 
 - both Composer packages validate;
 - root integration tests pass;
 - framework unit tests pass;
 - PHPStan reports no errors;
-- PHP-CS-Fixer reports no changes required;
-- Rector dry-run reports no changes required;
-- Composer audit reports no known vulnerable dependencies;
-- `Careminate\Foundation\Version` loads through the root Composer package.
+- PHP-CS-Fixer reports no required changes;
+- Rector reports no required changes;
+- Composer reports no vulnerable dependencies;
+- the application autoloads the framework through its Composer package.
 
 ---

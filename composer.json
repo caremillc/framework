@@ -5,18 +5,22 @@
   "license": "MIT",
   "keywords": [
     "careminate",
+    "container",
+    "dependency-injection",
     "enterprise",
     "framework",
-    "php"
+    "php",
+    "psr-11"
   ],
   "require": {
-    "php": "^8.2"
+    "php": "^8.4",
+    "psr/container": "^2.0"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.64",
     "phpstan/phpstan": "^2.1",
     "phpstan/phpstan-phpunit": "^2.0",
-    "phpunit/phpunit": "^11.5",
+    "phpunit/phpunit": "^12.5",
     "rector/rector": "^2.1"
   },
   "autoload": {
@@ -51,7 +55,7 @@
   },
   "extra": {
     "branch-alias": {
-      "dev-main": "0.1.x-dev"
+      "dev-main": "0.2.x-dev"
     }
   }
 }

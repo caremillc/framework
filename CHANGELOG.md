@@ -2,22 +2,32 @@
 
 All notable changes to the Careminate framework are documented in this file.
 
-The format follows Keep a Changelog principles. The project uses Semantic
-Versioning once stable public releases begin.
-
 ## [Unreleased]
 
 ### Added
 
-- Independent `caremillc/framework` Composer package.
-- PHP 8.2 minimum runtime baseline.
-- PSR-4 autoloading for the `Careminate` namespace.
-- Framework exception marker and foundational exception hierarchy.
-- Array, string, and cross-platform path support utilities.
-- Central framework version declaration.
-- PHPUnit unit and application integration tests.
-- PHPStan level-max static analysis.
-- PSR-12 formatting through PHP-CS-Fixer.
-- Rector dry-run quality checks.
-- GitHub Actions continuous integration.
-- Architecture documentation and decision records.
+- PSR-11-compatible dependency-injection container.
+- Public container registration and resolution contracts.
+- Transient, singleton, and scoped service lifetimes.
+- Independent scoped containers for request and worker isolation.
+- Contextual service and primitive bindings.
+- Explicit aliases and tagged-service collections.
+- Reflection-based constructor autowiring.
+- `Inject`, `Tagged`, and `Lazy` dependency attributes.
+- Callable, object, and container-managed factory services.
+- Native PHP 8.4 lazy proxies.
+- Circular dependency and alias-cycle detection.
+- Resolution-path diagnostics.
+- Exportable container definition snapshots.
+- Executable PHP container cache.
+- Frozen compiled containers.
+- Container unit and application integration tests.
+
+### Changed
+
+- Minimum supported PHP version corrected to PHP 8.4.
+- PHPUnit development baseline updated to PHPUnit 12.5.
+- PHPStan analysis target corrected to PHP 8.4.
+- Framework development version updated to `0.2.0-dev`.
+---
+
