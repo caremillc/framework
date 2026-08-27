@@ -6,7 +6,7 @@ namespace Careminate\Foundation;
 
 final class Version
 {
-    public const CURRENT = '0.3.0-dev';
+    public const string VERSION = '0.4.0-dev';
 
     public const MAJOR = 0;
 
@@ -14,9 +14,7 @@ final class Version
 
     public const PATCH = 0;
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function current(): string
     {
