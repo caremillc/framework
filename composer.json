@@ -1,0 +1,14 @@
+{
+    "name": "caremillc/framework",
+    "description": "Modular PHP framework foundations for Careminate applications.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "~8.4.0 || ~8.5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Careminate\\": "src/"
+        }
+    }
+}
