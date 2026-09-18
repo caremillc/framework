@@ -18,10 +18,14 @@ final readonly class CompiledArtifactContainerLoader
     ) {
     }
 
+    /**
+     * @param array<string, object> $runtimeObjects
+     */
     public function load(
         string $key,
         string $expectedBuildId,
         string $expectedFingerprint,
+        array $runtimeObjects = [],
     ): Container {
         $definitions = $this->store->load(
             $key,
@@ -29,6 +33,9 @@ final readonly class CompiledArtifactContainerLoader
             $expectedFingerprint,
         );
 
-        return new CompiledDefinitionContainerFactory()->create($definitions);
+        return new CompiledDefinitionContainerFactory()->create(
+            $definitions,
+            $runtimeObjects,
+        );
     }
 }

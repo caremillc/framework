@@ -19,8 +19,13 @@ use Psr\Container\ContainerInterface;
  */
 final class CompiledDefinitionContainerFactory
 {
-    public function create(DefinitionSet $definitions): Container
-    {
+    /**
+     * @param array<string, object> $runtimeObjects
+     */
+    public function create(
+        DefinitionSet $definitions,
+        array $runtimeObjects = [],
+    ): Container {
         $definitions = $this->validateRelationships($definitions);
         $plans = $this->prepareConstructors($definitions);
         $container = new Container();
@@ -85,6 +90,10 @@ final class CompiledDefinitionContainerFactory
 
         foreach ($definitions->tags as $tag) {
             $container->tag($tag['name'], ...$tag['identifiers']);
+        }
+
+        foreach ($runtimeObjects as $identifier => $object) {
+            $container->register($identifier, $object);
         }
 
         $container->freeze();
