@@ -16,6 +16,8 @@ use Careminate\Container\Exception\ResolutionException;
 use Careminate\Container\Exception\ScopeStateException;
 use Careminate\Container\Internal\AutowireFactory;
 use Careminate\Container\Internal\LazyClass;
+use Careminate\Container\Internal\ResolutionAccessPolicyInterface;
+use Careminate\Container\Internal\ResolutionExecutionContext;
 use Careminate\Container\Internal\ServiceLifetime;
 use Closure;
 use Psr\Container\ContainerInterface;
@@ -93,6 +95,19 @@ final class Container implements ContainerInterface
 
     private int $resolvingSingletons = 0;
 
+    private readonly ResolutionExecutionContext $execution;
+
+    /**
+     * The optional policy is an internal composition hook.
+     *
+     * @internal
+     */
+    public function __construct(
+        private readonly ?ResolutionAccessPolicyInterface $accessPolicy = null,
+    ) {
+        $this->execution = new ResolutionExecutionContext();
+    }
+
     public function freeze(): void
     {
         $this->frozen = true;
@@ -139,53 +154,66 @@ final class Container implements ContainerInterface
      */
     public function runInScope(Closure $operation): mixed
     {
-        if ($this->scopeToken !== null || $this->resolutionPath !== []) {
-            throw new ScopeStateException(
-                message: 'A scope cannot begin during another scope or service resolution.',
-                dependencyPath: $this->resolutionPath,
-            );
-        }
+        return $this->execution->run(
+            $this->execution->requester(),
+            function () use ($operation): mixed {
+                if ($this->scopeToken !== null || $this->resolutionPath !== []) {
+                    throw new ScopeStateException(
+                        message: 'A scope cannot begin during another scope or service resolution.',
+                        dependencyPath: $this->resolutionPath,
+                    );
+                }
 
-        $this->scopedEntries = [];
-        $this->scopeToken = new stdClass();
+                $this->scopedEntries = [];
+                $this->scopeToken = new stdClass();
 
-        try {
-            return $operation($this);
-        } finally {
-            $this->scopeToken = null;
-            $this->scopedEntries = [];
-        }
+                try {
+                    return $operation($this);
+                } finally {
+                    $this->scopeToken = null;
+                    $this->scopedEntries = [];
+                }
+            },
+        );
     }
 
     public function defer(string $id): DeferredService
     {
-        $this->assertValidIdentifier($id);
+        return $this->execution->run(
+            $this->execution->requester(),
+            function () use ($id): DeferredService {
+                $this->assertValidIdentifier($id);
+                $this->assertAccess($id);
 
-        if (!$this->has($id)) {
-            throw new EntryNotFoundException(
-                'No entry is registered for the deferred identifier.',
-            );
-        }
+                if (!$this->has($id)) {
+                    throw new EntryNotFoundException(
+                        'No entry is registered for the deferred identifier.',
+                    );
+                }
 
-        $requestedKey = 'entry:' . $id;
-        $key = $this->aliases[$requestedKey] ?? $requestedKey;
+                $requestedKey = 'entry:' . $id;
+                $key = $this->aliases[$requestedKey] ?? $requestedKey;
 
-        if (
-            ($this->definitions[$key]['lifetime'] ?? null)
-            === ServiceLifetime::Scoped
-        ) {
-            $this->assertScopedResolutionAllowed();
-        }
+                if (
+                    ($this->definitions[$key]['lifetime'] ?? null)
+                    === ServiceLifetime::Scoped
+                ) {
+                    $this->assertScopedResolutionAllowed();
+                }
 
-        $scopeToken = $this->scopeToken;
-        $singletonRestricted = $this->resolvingSingletons > 0;
+                $scopeToken = $this->scopeToken;
+                $singletonRestricted = $this->resolvingSingletons > 0;
+                $requester = $this->execution->requester();
 
-        return new DeferredService(
-            fn (): mixed => $this->resolveDeferred(
-                $id,
-                $scopeToken,
-                $singletonRestricted,
-            ),
+                return new DeferredService(
+                    fn (): mixed => $this->resolveDeferred(
+                        $id,
+                        $scopeToken,
+                        $singletonRestricted,
+                        $requester,
+                    ),
+                );
+            },
         );
     }
 
@@ -395,12 +423,46 @@ final class Container implements ContainerInterface
 
     public function get(string $id): mixed
     {
-        $this->resolutionPath[] = $id;
+        return $this->execution->run(
+            $this->execution->requester(),
+            function () use ($id): mixed {
+                $this->resolutionPath[] = $id;
 
-        try {
-            return $this->resolve($id);
-        } finally {
-            array_pop($this->resolutionPath);
+                try {
+                    $this->assertAccess($id);
+
+                    return $this->execution->run(
+                        $this->canonicalIdentifier($id),
+                        fn (): mixed => $this->resolve($id),
+                    );
+                } finally {
+                    array_pop($this->resolutionPath);
+                }
+            },
+        );
+    }
+
+    private function canonicalIdentifier(string $id): string
+    {
+        $requestedKey = 'entry:' . $id;
+        $key = $this->aliases[$requestedKey] ?? $requestedKey;
+
+        return substr($key, 6);
+    }
+
+    private function assertAccess(string $id): void
+    {
+        if (
+            $this->accessPolicy !== null
+            && !$this->accessPolicy->allows(
+                $this->execution->requester(),
+                $this->canonicalIdentifier($id),
+            )
+        ) {
+            throw new ResolutionException(
+                message: 'Access to the requested service is denied.',
+                dependencyPath: $this->resolutionPath,
+            );
         }
     }
 
@@ -408,25 +470,31 @@ final class Container implements ContainerInterface
         string $id,
         ?object $scopeToken,
         bool $singletonRestricted,
+        ?string $requester,
     ): mixed {
-        if ($scopeToken !== null && $scopeToken !== $this->scopeToken) {
-            throw new ScopeStateException(
-                message: 'The deferred reference belongs to a scope that has ended.',
-                dependencyPath: [...$this->resolutionPath, $id],
-            );
-        }
+        return $this->execution->run(
+            $requester,
+            function () use ($id, $scopeToken, $singletonRestricted): mixed {
+                if ($scopeToken !== null && $scopeToken !== $this->scopeToken) {
+                    throw new ScopeStateException(
+                        message: 'The deferred reference belongs to a scope that has ended.',
+                        dependencyPath: [...$this->resolutionPath, $id],
+                    );
+                }
 
-        if ($singletonRestricted) {
-            ++$this->resolvingSingletons;
-        }
+                if ($singletonRestricted) {
+                    ++$this->resolvingSingletons;
+                }
 
-        try {
-            return $this->get($id);
-        } finally {
-            if ($singletonRestricted) {
-                --$this->resolvingSingletons;
-            }
-        }
+                try {
+                    return $this->get($id);
+                } finally {
+                    if ($singletonRestricted) {
+                        --$this->resolvingSingletons;
+                    }
+                }
+            },
+        );
     }
 
     private function resolve(string $id): mixed
@@ -511,26 +579,31 @@ final class Container implements ContainerInterface
         Closure $arguments,
         object $object,
     ): void {
-        if (isset($this->initializingLazy[$key])) {
-            throw new ResolutionException(
-                message: 'A circular lazy service dependency was detected.',
-                dependencyPath: [...$this->resolutionPath, $id],
-            );
-        }
+        $this->execution->run(
+            $id,
+            function () use ($id, $key, $lazyClass, $arguments, $object): void {
+                if (isset($this->initializingLazy[$key])) {
+                    throw new ResolutionException(
+                        message: 'A circular lazy service dependency was detected.',
+                        dependencyPath: [...$this->resolutionPath, $id],
+                    );
+                }
 
-        $this->resolutionPath[] = $id;
-        $this->initializingLazy[$key] = true;
-        ++$this->resolvingSingletons;
+                $this->resolutionPath[] = $id;
+                $this->initializingLazy[$key] = true;
+                ++$this->resolvingSingletons;
 
-        try {
-            $lazyClass->initialize($object, $arguments($this));
-        } catch (Throwable $previous) {
-            throw $this->wrapResolutionFailure($previous);
-        } finally {
-            --$this->resolvingSingletons;
-            unset($this->initializingLazy[$key]);
-            array_pop($this->resolutionPath);
-        }
+                try {
+                    $lazyClass->initialize($object, $arguments($this));
+                } catch (Throwable $previous) {
+                    throw $this->wrapResolutionFailure($previous);
+                } finally {
+                    --$this->resolvingSingletons;
+                    unset($this->initializingLazy[$key]);
+                    array_pop($this->resolutionPath);
+                }
+            },
+        );
     }
 
     private function wrapResolutionFailure(Throwable $previous): ResolutionException

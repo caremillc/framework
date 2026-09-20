@@ -9,6 +9,7 @@ use Careminate\Container\Compilation\Internal\ConstructorPlanCompiler;
 use Careminate\Container\Compilation\Internal\PreparedConstructor;
 use Careminate\Container\Container;
 use Careminate\Container\Internal\ConstructorMetadata;
+use Careminate\Container\Internal\ResolutionAccessPolicyInterface;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 
@@ -25,10 +26,11 @@ final class CompiledDefinitionContainerFactory
     public function create(
         DefinitionSet $definitions,
         array $runtimeObjects = [],
+        ?ResolutionAccessPolicyInterface $accessPolicy = null,
     ): Container {
         $definitions = $this->validateRelationships($definitions);
         $plans = $this->prepareConstructors($definitions);
-        $container = new Container();
+        $container = new Container($accessPolicy);
 
         foreach ($definitions->services as $definition) {
             if ($definition->isValue()) {
@@ -56,10 +58,11 @@ final class CompiledDefinitionContainerFactory
                 continue;
             }
 
-            $factory = static fn (ContainerInterface $resolver): object => $prepared(
-                $resolver,
-                $container->tagged(...),
-            );
+            $factory = static fn (ContainerInterface $resolver): object =>
+                $prepared(
+                    $resolver,
+                    $container->tagged(...),
+                );
 
             switch ($definition->lifetime) {
                 case DefinitionLifetime::Transient:
