@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Container;
 
@@ -8,6 +8,7 @@ use Closure;
 use Flint\Container\Exception\ContainerException;
 use Flint\Container\Exception\EntryNotFoundException;
 use Flint\Container\Exception\ResolutionException;
+use Flint\Container\Internal\AutowireFactory;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
@@ -57,7 +58,7 @@ final class Container implements ContainerInterface
     {
         $this->assertCanRegister($id);
 
-        $this->factories[$id] = Closure::fromCallable($factory);
+        $this->factories[$id]  = Closure::fromCallable($factory);
         $this->singletons[$id] = true;
     }
 
@@ -66,6 +67,19 @@ final class Container implements ContainerInterface
         $this->assertCanRegister($id);
 
         $this->instances[$id] = $value;
+    }
+
+    public function autowire(string $class, bool $singleton = false): void
+    {
+        $this->assertCanRegister($class);
+
+        $factory = AutowireFactory::create($class);
+
+        $this->factories[$class] = $factory;
+
+        if ($singleton) {
+            $this->singletons[$class] = true;
+        }
     }
 
     public function alias(string $alias, string $target): void
@@ -84,13 +98,13 @@ final class Container implements ContainerInterface
     public function has(string $id): bool
     {
         return array_key_exists($id, $this->instances)
-            || array_key_exists($id, $this->factories)
-            || array_key_exists($id, $this->aliases);
+        || array_key_exists($id, $this->factories)
+        || array_key_exists($id, $this->aliases);
     }
 
     public function get(string $id): mixed
     {
-        if (!$this->has($id)) {
+        if (! $this->has($id)) {
             throw new EntryNotFoundException(
                 sprintf(
                     'Container entry "%s" is not registered. Register it before resolution.',
@@ -104,7 +118,7 @@ final class Container implements ContainerInterface
         }
 
         if (in_array($id, $this->resolving, true)) {
-            $path = [...$this->resolving, $id];
+            $path = [ ...$this->resolving, $id];
 
             throw new ResolutionException(
                 'Circular dependency detected: ' . implode(' -> ', $path),
