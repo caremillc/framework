@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 /**
  * @return array{
@@ -13,6 +13,7 @@ function smokeRequest(
     string $address,
     string $method,
     string $path,
+    string $requestBody = '',
 ): array {
     $errorCode    = 0;
     $errorMessage = '';
@@ -37,6 +38,22 @@ function smokeRequest(
             $path,
             $address,
         );
+
+        $request = sprintf(
+            "%s %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n",
+            $method,
+            $path,
+            $address,
+        );
+
+        if ($requestBody !== '' || $method === 'POST') {
+            $request .= sprintf(
+                "Content-Type: application/octet-stream\r\nContent-Length: %d\r\n",
+                strlen($requestBody),
+            );
+        }
+
+        $request .= "\r\n" . $requestBody;
 
         $offset = 0;
         $length = strlen($request);
@@ -147,14 +164,22 @@ try {
     $process = proc_open(
         [
             PHP_BINARY,
-            '-d', 'display_errors=0',
-            '-d', 'log_errors=1',
-            '-d', 'output_buffering=0',
-            '-d', 'output_handler=',
-            '-d', 'zlib.output_compression=0',
-            '-d', 'default_mimetype=',
-            '-S', $address,
-            '-t', $root . '/tests/Fixtures/Http',
+            '-d',
+            'display_errors=0',
+            '-d',
+            'log_errors=1',
+            '-d',
+            'output_buffering=0',
+            '-d',
+            'output_handler=',
+            '-d',
+            'zlib.output_compression=0',
+            '-d',
+            'default_mimetype=',
+            '-S',
+            $address,
+            '-t',
+            $root . '/tests/Fixtures/Http',
             $root . '/tests/Fixtures/Http/router.php',
         ],
         [
@@ -200,20 +225,35 @@ try {
     smokeCheck($ready, 'The PHP test server did not become ready.');
 
     $cases = [
-        ['GET', '/text', 200, "Caf\xC3\xA9", '5'],
-        ['HEAD', '/text', 200, '', '5'],
-        ['GET', '/json', 200, '{"ready":true}', '14'],
-        ['GET', '/zero', 200, '0', '1'],
-        ['GET', '/cookies', 200, '', '0'],
-        ['GET', '/location', 202, 'Accepted', '8'],
-        ['GET', '/empty', 204, '', null],
-        ['GET', '/reset', 205, '', '0'],
-        ['GET', '/cached', 304, '', null],
+        ['GET', '/text', 200, "Caf\xC3\xA9", '5', ''],
+        ['HEAD', '/text', 200, '', '5', ''],
+        ['GET', '/json', 200, '{"ready":true}', '14', ''],
+        ['GET', '/zero', 200, '0', '1', ''],
+        ['GET', '/cookies', 200, '', '0', ''],
+        ['GET', '/location', 202, 'Accepted', '8', ''],
+        ['GET', '/empty', 204, '', null, ''],
+        ['GET', '/reset', 205, '', '0', ''],
+        ['GET', '/cached', 304, '', null, ''],
+
+        // Request capture: empty, binary, exact limit, and over limit.
+        ['POST', '/echo', 200, '', '0', ''],
+        ['POST', '/echo', 200, "\0\xFF\r\n", '4', "\0\xFF\r\n"],
+        ['POST', '/echo', 200, '12345678', '8', '12345678'],
+        ['POST', '/echo', 413, 'Too large', '9', '123456789'],
+
+        // The server must still handle another request after rejection.
+        ['GET', '/text', 200, "Caf\xC3\xA9", '5', ''],
     ];
 
-    foreach ($cases as [$method, $path, $status, $body, $length]) {
-        $response = smokeRequest($address, $method, $path);
-        $label    = $method . ' ' . $path;
+    foreach ($cases as [$method, $path, $status, $body, $length, $requestBody]) {
+        $response = smokeRequest(
+            $address,
+            $method,
+            $path,
+            $requestBody,
+        );
+
+        $label = $method . ' ' . $path;
 
         smokeCheck(
             $response['status'] === $status,
@@ -227,7 +267,7 @@ try {
 
         smokeCheck(
             ($response['headers']['content-length'] ?? [])
-            === ($length === null ? [] : [$length]),
+                === ($length === null ? [] : [$length]),
             $label . ': unexpected Content-Length.',
         );
 
@@ -244,7 +284,7 @@ try {
         if ($path === '/text') {
             smokeCheck(
                 ($response['headers']['content-type'] ?? [])
-                === ['text/plain; charset=utf-8'],
+                    === ['text/plain; charset=utf-8'],
                 $label . ': unexpected text content type.',
             );
         }
@@ -252,7 +292,7 @@ try {
         if ($path === '/json') {
             smokeCheck(
                 ($response['headers']['content-type'] ?? [])
-                === ['application/json'],
+                    === ['application/json'],
                 $label . ': unexpected JSON content type.',
             );
         }
@@ -260,7 +300,7 @@ try {
         if ($path === '/cookies') {
             smokeCheck(
                 ($response['headers']['set-cookie'] ?? [])
-                === ['first=1; Path=/', 'second=2; Path=/'],
+                    === ['first=1; Path=/', 'second=2; Path=/'],
                 $label . ': cookie values were combined, replaced, or reordered.',
             );
         }
@@ -279,10 +319,34 @@ try {
             );
         }
 
+        if ($path === '/echo' && $status === 200) {
+            smokeCheck(
+                ($response['headers']['content-type'] ?? [])
+                    === ['application/octet-stream'],
+                $label . ': unexpected echo content type.',
+            );
+
+            smokeCheck(
+                ($response['headers']['x-captured-method'] ?? [])
+                    === ['POST'],
+                $label . ': the request method was not captured.',
+            );
+
+            smokeCheck(
+                ($response['headers']['x-captured-content-type'] ?? [])
+                    === ['application/octet-stream'],
+                $label . ': the request content type was not captured.',
+            );
+        }
+
         echo sprintf('PASS: %s -> %d', $label, $status) . PHP_EOL;
     }
 
-    echo 'PASS: 9 HTTP requests and all response assertions.' . PHP_EOL;
+
+    echo sprintf(
+        'PASS: %d HTTP requests and all response assertions.',
+        count($cases),
+    ) . PHP_EOL;
 } catch (Throwable $exception) {
     $exitCode = 1;
 
