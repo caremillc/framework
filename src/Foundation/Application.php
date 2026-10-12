@@ -42,4 +42,9 @@ final class Application
     {
         return $this->container;
     }
+
+    public function register(ServiceProvider $provider): void
+    {
+        $provider->register($this->container);
+    }
 }
