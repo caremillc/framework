@@ -8,9 +8,12 @@ use InvalidArgumentException;
 
 final readonly class Response
 {
+    private Headers $headers;
+
     public function __construct(
         private int $status = 200,
         private string $body = '',
+        ?Headers $headers = null,
     ) {
         if ($status < 200 || $status > 599) {
             throw new InvalidArgumentException(
@@ -29,6 +32,8 @@ final readonly class Response
                 ),
             );
         }
+
+        $this->headers = $headers ?? new Headers();
     }
 
     public function status(): int
@@ -41,11 +46,17 @@ final readonly class Response
         return $this->body;
     }
 
+    public function headers(): Headers
+    {
+        return $this->headers;
+    }
+
     public function withStatus(int $status): self
     {
         return new self(
             status: $status,
             body: $this->body,
+            headers: $this->headers,
         );
     }
 
@@ -54,6 +65,16 @@ final readonly class Response
         return new self(
             status: $this->status,
             body: $body,
+            headers: $this->headers,
+        );
+    }
+
+    public function withHeaders(Headers $headers): self
+    {
+        return new self(
+            status: $this->status,
+            body: $this->body,
+            headers: $headers,
         );
     }
 }
