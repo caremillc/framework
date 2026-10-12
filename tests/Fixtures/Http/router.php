@@ -18,26 +18,27 @@ require_once dirname(__DIR__, 3) . '/vendor/autoload.php';
 $token = getenv('FLINT_HTTP_SMOKE_TOKEN');
 
 if ($token === false || $token === '') {
-    throw new RuntimeException('The HTTP smoke token is missing.');
+    throw new RuntimeException('The HTTP fixture requires its test runner.');
 }
 
 $emitter = new ResponseEmitter(new PhpResponseOutput());
 $headRequest = ($_SERVER['REQUEST_METHOD'] ?? null) === 'HEAD';
 
+// Catch input failures separately from route-handler failures.
 try {
     $request = new PhpRequestFactory(
         bodyReader: new RequestBodyReader(maxBytes: 8),
     )->capture();
 } catch (RequestBodyTooLargeException) {
     $emitter->emit(
-        ResponseFactory::text('Too large', 413),
+        ResponseFactory::text('Too large', status: 413),
         headRequest: $headRequest,
     );
 
     return;
 } catch (InvalidArgumentException) {
     $emitter->emit(
-        ResponseFactory::text('Bad request', 400),
+        ResponseFactory::text('Bad request', status: 400),
         headRequest: $headRequest,
     );
 
@@ -49,25 +50,29 @@ $router = new Router();
 $router->add(
     'GET',
     '/ready',
-    static fn (Request $request): Response => ResponseFactory::text($token),
+    static fn (Request $request): Response =>
+        ResponseFactory::text($token),
 );
 
 $router->add(
     'GET',
     '/text',
-    static fn (Request $request): Response => ResponseFactory::text("Caf\xC3\xA9"),
+    static fn (Request $request): Response =>
+        ResponseFactory::text("Caf\xC3\xA9"),
 );
 
 $router->add(
     'GET',
     '/json',
-    static fn (Request $request): Response => ResponseFactory::json(['ready' => true]),
+    static fn (Request $request): Response =>
+        ResponseFactory::json(['ready' => true]),
 );
 
 $router->add(
     'GET',
     '/zero',
-    static fn (Request $request): Response => ResponseFactory::text('0'),
+    static fn (Request $request): Response =>
+        ResponseFactory::text('0'),
 );
 
 $router->add(
@@ -136,24 +141,30 @@ $router->add(
 $router->add(
     'GET',
     '/head-explicit',
-    static fn (Request $request): Response => new Response(
-        body: 'Explicit',
-        headers: new Headers()->with('X-Handler', 'get'),
-    ),
+    static function (Request $request): Response {
+        $response = ResponseFactory::text('Explicit');
+
+        return $response->withHeaders(
+            $response->headers()->with('X-Handler', 'get'),
+        );
+    },
 );
 
 $router->add(
     'HEAD',
     '/head-explicit',
-    static fn (Request $request): Response => new Response(
-        body: 'Explicit',
-        headers: new Headers()->with('X-Handler', 'head'),
-    ),
+    static function (Request $request): Response {
+        $response = ResponseFactory::text('Explicit');
+
+        return $response->withHeaders(
+            $response->headers()->with('X-Handler', 'head'),
+        );
+    },
 );
 
 $response = $router->handle($request);
 
-// Verify that emission removes previously queued PHP headers.
+// Verify that emission clears previously queued PHP headers.
 header('X-Stale: remove-me');
 
 $emitter->emit(

@@ -238,14 +238,27 @@ try {
         ['GET', '/reset', 205, '', '0', ''],
         ['GET', '/cached', 304, '', null, ''],
 
-        // Request capture: empty, binary, exact limit, and over limit.
         ['POST', '/echo', 200, '', '0', ''],
         ['POST', '/echo', 200, "\0\xFF\r\n", '4', "\0\xFF\r\n"],
         ['POST', '/echo', 200, '12345678', '8', '12345678'],
         ['POST', '/echo', 413, 'Too large', '9', '123456789'],
 
-        // The server must still handle another request after rejection.
         ['GET', '/text', 200, "Caf\xC3\xA9", '5', ''],
+
+        // Routing and method handling.
+        ['GET', '/missing', 404, 'Not found', '9', ''],
+        ['POST', '/text', 405, 'Method not allowed', '18', ''],
+        ['GET', '/echo', 405, 'Method not allowed', '18', ''],
+        ['HEAD', '/echo', 405, '', '18', ''],
+
+        // Query strings do not change routing; raw path differences do.
+        ['GET', '/text?lang=en', 200, "Caf\xC3\xA9", '5', ''],
+        ['GET', '/text/', 404, 'Not found', '9', ''],
+        ['GET', '/te%78t', 404, 'Not found', '9', ''],
+
+        // An explicit HEAD handler takes precedence over GET fallback.
+        ['GET', '/head-explicit', 200, 'Explicit', '8', ''],
+        ['HEAD', '/head-explicit', 200, '', '8', ''],
     ];
 
     foreach ($cases as [$method, $path, $status, $body, $length, $requestBody]) {
