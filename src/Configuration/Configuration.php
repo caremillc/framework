@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Configuration;
 
@@ -58,6 +58,16 @@ final readonly class Configuration
         }
 
         return new self($values);
+    }
+
+    /**
+     * Return a new configuration with the supplied overrides.
+     *
+     * @param array<array-key, mixed> $overrides
+     */
+    public function withOverrides(array $overrides): self
+    {
+        return self::fromLayers($this->values, $overrides);
     }
 
     public function has(string $key): bool
