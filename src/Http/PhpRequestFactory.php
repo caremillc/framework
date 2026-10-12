@@ -1,9 +1,13 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 
 namespace Flint\Http;
 
+use Flint\Http\Request;
+use Flint\Http\RequestBodyReader;
+use Flint\Http\RequestFramingValidator;
+use Flint\Http\ServerRequestFactory;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -12,6 +16,7 @@ final class PhpRequestFactory
     public function __construct(
         private readonly ServerRequestFactory $serverFactory = new ServerRequestFactory(),
         private readonly RequestBodyReader $bodyReader = new RequestBodyReader(),
+        private readonly RequestFramingValidator $framingValidator = new RequestFramingValidator(),
     ) {
     }
 
@@ -23,7 +28,7 @@ final class PhpRequestFactory
         $metadata = $this->serverFactory->create($server);
 
         $contentType = $metadata->headers()->get('Content-Type')[0] ?? '';
-        $mediaType = strtolower(trim(explode(';', $contentType, 2)[0]));
+        $mediaType   = strtolower(trim(explode(';', $contentType, 2)[0]));
 
         if ($mediaType === 'multipart/form-data') {
             throw new InvalidArgumentException(
@@ -45,11 +50,15 @@ final class PhpRequestFactory
             fclose($stream);
         }
 
-        return new Request(
+        $request = new Request(
             method: $metadata->method(),
             target: $metadata->target(),
             headers: $metadata->headers(),
             body: $body,
         );
+
+        $this->framingValidator->validate($request);
+
+        return $request;
     }
 }
