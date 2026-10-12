@@ -1,13 +1,9 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Flint\Http;
 
-use Flint\Http\Request;
-use Flint\Http\RequestBodyReader;
-use Flint\Http\RequestFramingValidator;
-use Flint\Http\ServerRequestFactory;
 use InvalidArgumentException;
 use RuntimeException;
 

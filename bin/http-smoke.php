@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 /**
  * @return array{
@@ -31,13 +31,6 @@ function smokeRequest(
 
     try {
         stream_set_timeout($socket, 5);
-
-        $request = sprintf(
-            "%s %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n",
-            $method,
-            $path,
-            $address,
-        );
 
         $request = sprintf(
             "%s %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n",
@@ -84,8 +77,8 @@ function smokeRequest(
         throw new RuntimeException('The HTTP response has no header terminator.');
     }
 
-    $lines       = explode("\r\n", $parts[0]);
-    $statusLine  = array_shift($lines);
+    $lines      = explode("\r\n", $parts[0]);
+    $statusLine = array_shift($lines);
 
     if (
         preg_match('/\AHTTP\/1\.[01] ([0-9]{3})(?: |$)/', $statusLine, $matches) !== 1
@@ -93,7 +86,7 @@ function smokeRequest(
         throw new RuntimeException('The HTTP response status line is invalid.');
     }
 
-    $headers = [];
+    $headers  = [];
 
     foreach ($lines as $line) {
         $separator = strpos($line, ':');
@@ -136,7 +129,7 @@ if ($listener === false) {
     throw new RuntimeException('Could not reserve a local test port.');
 }
 
-$address = stream_socket_get_name($listener, false);
+$address  = stream_socket_get_name($listener, false);
 fclose($listener);
 
 if ($address === false) {
@@ -152,7 +145,7 @@ if ($log === false) {
 $token = bin2hex(random_bytes(16));
 
 /** @var array<string, string> $environment */
-$environment = getenv();
+$environment  = getenv();
 
 $environment['FLINT_HTTP_SMOKE_TOKEN'] = $token;
 unset($environment['PHP_CLI_SERVER_WORKERS']);
@@ -224,6 +217,16 @@ try {
 
     smokeCheck($ready, 'The PHP test server did not become ready.');
 
+    /**
+     * @var list<array{
+     *     0: string,
+     *     1: string,
+     *     2: int,
+     *     3: string,
+     *     4: string|null,
+     *     5: string
+     * }> $cases
+     */
     $cases = [
         ['GET', '/text', 200, "Caf\xC3\xA9", '5', ''],
         ['HEAD', '/text', 200, '', '5', ''],
@@ -267,7 +270,7 @@ try {
 
         smokeCheck(
             ($response['headers']['content-length'] ?? [])
-                === ($length === null ? [] : [$length]),
+            === ($length === null ? [] : [$length]),
             $label . ': unexpected Content-Length.',
         );
 
@@ -284,7 +287,7 @@ try {
         if ($path === '/text') {
             smokeCheck(
                 ($response['headers']['content-type'] ?? [])
-                    === ['text/plain; charset=utf-8'],
+                === ['text/plain; charset=utf-8'],
                 $label . ': unexpected text content type.',
             );
         }
@@ -292,7 +295,7 @@ try {
         if ($path === '/json') {
             smokeCheck(
                 ($response['headers']['content-type'] ?? [])
-                    === ['application/json'],
+                === ['application/json'],
                 $label . ': unexpected JSON content type.',
             );
         }
@@ -300,7 +303,7 @@ try {
         if ($path === '/cookies') {
             smokeCheck(
                 ($response['headers']['set-cookie'] ?? [])
-                    === ['first=1; Path=/', 'second=2; Path=/'],
+                === ['first=1; Path=/', 'second=2; Path=/'],
                 $label . ': cookie values were combined, replaced, or reordered.',
             );
         }
@@ -322,26 +325,25 @@ try {
         if ($path === '/echo' && $status === 200) {
             smokeCheck(
                 ($response['headers']['content-type'] ?? [])
-                    === ['application/octet-stream'],
+                === ['application/octet-stream'],
                 $label . ': unexpected echo content type.',
             );
 
             smokeCheck(
                 ($response['headers']['x-captured-method'] ?? [])
-                    === ['POST'],
+                === ['POST'],
                 $label . ': the request method was not captured.',
             );
 
             smokeCheck(
                 ($response['headers']['x-captured-content-type'] ?? [])
-                    === ['application/octet-stream'],
+                === ['application/octet-stream'],
                 $label . ': the request content type was not captured.',
             );
         }
 
         echo sprintf('PASS: %s -> %d', $label, $status) . PHP_EOL;
     }
-
 
     echo sprintf(
         'PASS: %d HTTP requests and all response assertions.',
