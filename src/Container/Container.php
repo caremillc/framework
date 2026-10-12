@@ -19,9 +19,21 @@ final class Container implements ContainerInterface
     private array $factories = [];
 
     /**
+     * Registered values and successfully resolved singleton values.
+     *
      * @var array<string, mixed>
      */
     private array $instances = [];
+
+    /**
+     * @var array<string, true>
+     */
+    private array $singletons = [];
+
+    /**
+     * @var array<string, string>
+     */
+    private array $aliases = [];
 
     /**
      * @var list<string>
@@ -38,6 +50,17 @@ final class Container implements ContainerInterface
         $this->factories[$id] = Closure::fromCallable($factory);
     }
 
+    /**
+     * @param callable(ContainerInterface): mixed $factory
+     */
+    public function singleton(string $id, callable $factory): void
+    {
+        $this->assertCanRegister($id);
+
+        $this->factories[$id] = Closure::fromCallable($factory);
+        $this->singletons[$id] = true;
+    }
+
     public function instance(string $id, mixed $value): void
     {
         $this->assertCanRegister($id);
@@ -45,25 +68,39 @@ final class Container implements ContainerInterface
         $this->instances[$id] = $value;
     }
 
+    public function alias(string $alias, string $target): void
+    {
+        $this->assertCanRegister($alias);
+
+        if ($target === '') {
+            throw new ContainerException(
+                'Container alias targets must not be empty.',
+            );
+        }
+
+        $this->aliases[$alias] = $target;
+    }
+
     public function has(string $id): bool
     {
         return array_key_exists($id, $this->instances)
-            || array_key_exists($id, $this->factories);
+            || array_key_exists($id, $this->factories)
+            || array_key_exists($id, $this->aliases);
     }
 
     public function get(string $id): mixed
     {
-        if (array_key_exists($id, $this->instances)) {
-            return $this->instances[$id];
-        }
-
-        if (!array_key_exists($id, $this->factories)) {
+        if (!$this->has($id)) {
             throw new EntryNotFoundException(
                 sprintf(
                     'Container entry "%s" is not registered. Register it before resolution.',
                     $id,
                 ),
             );
+        }
+
+        if (array_key_exists($id, $this->instances)) {
+            return $this->instances[$id];
         }
 
         if (in_array($id, $this->resolving, true)) {
@@ -77,7 +114,17 @@ final class Container implements ContainerInterface
         $this->resolving[] = $id;
 
         try {
-            return ($this->factories[$id])($this);
+            if (array_key_exists($id, $this->aliases)) {
+                return $this->get($this->aliases[$id]);
+            }
+
+            $value = ($this->factories[$id])($this);
+
+            if (isset($this->singletons[$id])) {
+                $this->instances[$id] = $value;
+            }
+
+            return $value;
         } catch (ResolutionException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
