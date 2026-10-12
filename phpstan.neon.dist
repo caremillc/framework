@@ -1,0 +1,12 @@
+parameters:
+    level: max
+
+    phpVersion: 80400
+
+    paths:
+        - src
+        - tests
+        - bin
+        - .php-cs-fixer.dist.php
+
+    tmpDir: .phpstan.cache

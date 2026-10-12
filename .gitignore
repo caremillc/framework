@@ -1,4 +1,4 @@
 /vendor/
 /.phpunit.cache/
 /.phpstan.cache/
-/.php-cs-fixer.cache
+/.php-cs-fixer.cache 
