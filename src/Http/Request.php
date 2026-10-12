@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Http;
 
@@ -14,12 +14,23 @@ final readonly class Request
 
     private ?string $queryString;
 
+    /**
+     * @param array<array-key, mixed> $attributes
+     */
     public function __construct(
         private string $method = 'GET',
         private string $target = '/',
         ?Headers $headers = null,
         private string $body = '',
+        private array $attributes = [],
     ) {
+        foreach ($attributes as $name => $_value) {
+            if (! is_string($name) || $name === '') {
+                throw new InvalidArgumentException(
+                    'Request attribute names must be non-empty strings.',
+                );
+            }
+        }
         if (
             preg_match(
                 '/\A[!#$%&\'*+.^_`|~0-9A-Za-z-]+\z/',
@@ -45,9 +56,9 @@ final readonly class Request
 
         $parts = explode('?', $target, 2);
 
-        $this->path = $parts[0];
+        $this->path        = $parts[0];
         $this->queryString = $parts[1] ?? null;
-        $this->headers = $headers ?? new Headers();
+        $this->headers     = $headers ?? new Headers();
     }
 
     public function method(): string
@@ -78,5 +89,63 @@ final readonly class Request
     public function body(): string
     {
         return $this->body;
+    }
+    public function hasAttribute(string $name): bool
+    {
+        self::validateAttributeName($name);
+
+        return array_key_exists($name, $this->attributes);
+    }
+
+    public function attribute(string $name, mixed $default = null): mixed
+    {
+        self::validateAttributeName($name);
+
+        if (! array_key_exists($name, $this->attributes)) {
+            return $default;
+        }
+
+        return $this->attributes[$name];
+    }
+
+    public function withAttribute(string $name, mixed $value): self
+    {
+        self::validateAttributeName($name);
+
+        $attributes        = $this->attributes;
+        $attributes[$name] = $value;
+
+        return new self(
+            method: $this->method,
+            target: $this->target,
+            headers: $this->headers,
+            body: $this->body,
+            attributes: $attributes,
+        );
+    }
+
+    public function withoutAttribute(string $name): self
+    {
+        self::validateAttributeName($name);
+
+        $attributes = $this->attributes;
+        unset($attributes[$name]);
+
+        return new self(
+            method: $this->method,
+            target: $this->target,
+            headers: $this->headers,
+            body: $this->body,
+            attributes: $attributes,
+        );
+    }
+
+    private static function validateAttributeName(string $name): void
+    {
+        if ($name === '') {
+            throw new InvalidArgumentException(
+                'Request attribute names must be non-empty strings.',
+            );
+        }
     }
 }
