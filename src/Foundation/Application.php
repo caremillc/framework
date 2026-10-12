@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Flint\Foundation;
 
-use Flint\Contracts\Foundation\ApplicationInterface;
+use Flint\Container\Container;
 use InvalidArgumentException;
 
-final class Application implements ApplicationInterface
+final class Application
 {
     private readonly string $basePath;
+
+    private readonly Container $container;
 
     public function __construct(string $basePath)
     {
@@ -28,10 +30,16 @@ final class Application implements ApplicationInterface
         }
 
         $this->basePath = $resolvedPath;
+        $this->container = new Container();
     }
 
     public function basePath(): string
     {
         return $this->basePath;
+    }
+
+    public function container(): Container
+    {
+        return $this->container;
     }
 }
