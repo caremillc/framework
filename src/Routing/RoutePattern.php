@@ -102,7 +102,7 @@ final readonly class RoutePattern
         return $parameters;
     }
 
-        /**
+    /**
      * @param array<array-key, mixed> $parameters
      */
     public function generate(array $parameters = []): string
