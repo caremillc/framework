@@ -20,6 +20,9 @@ final class Router implements RequestHandler
      */
     private array $literalRoutes = [];
 
+    /** @var array<string, RoutePattern> */
+    private array $namedRoutes = [];
+
     /**
      * @var list<array{
      *     pattern: RoutePattern,
@@ -32,18 +35,35 @@ final class Router implements RequestHandler
     /** @var array<string, true> */
     private array $registrations = [];
 
-    /**
+       /**
      * @param callable(Request): mixed $handler
      */
     public function add(
         string $method,
         string $path,
         callable $handler,
+        ?string $name = null,
     ): void {
-        // Validate the method independently of the route pattern.
         new Request(method: $method);
 
         $pattern = new RoutePattern($path);
+
+        if ($name !== null) {
+            if (
+                preg_match('/\A[A-Za-z_][A-Za-z0-9_.-]*\z/', $name) !== 1
+            ) {
+                throw new InvalidArgumentException(
+                    'Route names must start with a letter or underscore '
+                    . 'and contain only letters, digits, underscores, dots, or hyphens.',
+                );
+            }
+
+            if (isset($this->namedRoutes[$name])) {
+                throw new InvalidArgumentException(
+                    sprintf('Route name "%s" is already registered.', $name),
+                );
+            }
+        }
 
         $shape = preg_replace(
             '/\{[A-Za-z_][A-Za-z0-9_]*\}/',
@@ -76,7 +96,12 @@ final class Router implements RequestHandler
         }
 
         $this->registrations[$registration] = true;
+
+        if ($name !== null) {
+            $this->namedRoutes[$name] = $pattern;
+        }
     }
+
 
     public function handle(Request $request): Response
     {
@@ -197,4 +222,21 @@ final class Router implements RequestHandler
 
         return $response;
     }
+
+     /**
+     * @param array<array-key, mixed> $parameters
+     */
+    public function path(string $name, array $parameters = []): string
+    {
+        $pattern = $this->namedRoutes[$name] ?? null;
+
+        if ($pattern === null) {
+            throw new InvalidArgumentException(
+                sprintf('Unknown route name "%s".', $name),
+            );
+        }
+
+        return $pattern->generate($parameters);
+    }
+    
 }
