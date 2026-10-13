@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Flint\Routing;
 
 use Closure;
+use Flint\Http\QueryStringEncoder;
 use Flint\Http\Request;
 use Flint\Http\RequestHandler;
 use Flint\Http\Response;
@@ -35,7 +36,7 @@ final class Router implements RequestHandler
     /** @var array<string, true> */
     private array $registrations = [];
 
-       /**
+    /**
      * @param callable(Request): mixed $handler
      */
     public function add(
@@ -54,7 +55,7 @@ final class Router implements RequestHandler
             ) {
                 throw new InvalidArgumentException(
                     'Route names must start with a letter or underscore '
-                    . 'and contain only letters, digits, underscores, dots, or hyphens.',
+                        . 'and contain only letters, digits, underscores, dots, or hyphens.',
                 );
             }
 
@@ -223,7 +224,7 @@ final class Router implements RequestHandler
         return $response;
     }
 
-     /**
+    /**
      * @param array<array-key, mixed> $parameters
      */
     public function path(string $name, array $parameters = []): string
@@ -238,5 +239,23 @@ final class Router implements RequestHandler
 
         return $pattern->generate($parameters);
     }
-    
+
+    /**
+     * @param array<array-key, mixed> $parameters
+     * @param array<array-key, mixed> $query
+     */
+    public function target(
+        string $name,
+        array $parameters = [],
+        array $query = [],
+    ): string {
+        $path = $this->path($name, $parameters);
+        $queryString = QueryStringEncoder::encode($query);
+
+        if ($queryString === '') {
+            return $path;
+        }
+
+        return $path . '?' . $queryString;
+    }
 }
