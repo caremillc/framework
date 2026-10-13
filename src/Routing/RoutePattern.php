@@ -14,6 +14,8 @@ final readonly class RoutePattern
     /** @var list<string> */
     private array $parameterNames;
 
+    private string $template;
+
     public function __construct(string $pattern)
     {
         $regexSegments = [];
@@ -66,6 +68,7 @@ final readonly class RoutePattern
 
         $this->regex = '~\A' . implode('/', $regexSegments) . '\z~';
         $this->parameterNames = $parameterNames;
+        $this->template = $pattern;
     }
 
     public function isLiteral(): bool
@@ -98,4 +101,51 @@ final readonly class RoutePattern
 
         return $parameters;
     }
+
+        /**
+     * @param array<array-key, mixed> $parameters
+     */
+    public function generate(array $parameters = []): string
+    {
+        $replacements = [];
+
+        foreach ($this->parameterNames as $name) {
+            if (! array_key_exists($name, $parameters)) {
+                throw new InvalidArgumentException(
+                    sprintf('Missing route parameter "%s".', $name),
+                );
+            }
+
+            $value = $parameters[$name];
+
+            if (! is_string($value) || $value === '') {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Route parameter "%s" must contain a non-empty string.',
+                        $name,
+                    ),
+                );
+            }
+
+            if ($value === '.' || $value === '..') {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Route parameter "%s" must not be a dot segment.',
+                        $name,
+                    ),
+                );
+            }
+
+            $replacements['{' . $name . '}'] = rawurlencode($value);
+        }
+
+        if (count($parameters) !== count($this->parameterNames)) {
+            throw new InvalidArgumentException(
+                'Unexpected route parameters were supplied.',
+            );
+        }
+
+        return strtr($this->template, $replacements);
+    }
+
 }
