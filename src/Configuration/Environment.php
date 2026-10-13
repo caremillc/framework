@@ -21,7 +21,8 @@ final readonly class Environment
         $validated = [];
 
         foreach ($values as $name => $value) {
-            if (!is_string($name) || $name === '') {
+            if (!is_string($name) || $name === '') 
+                {
                 throw new ConfigurationException(
                     'Environment names must be non-empty strings.',
                 );
