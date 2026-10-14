@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Flint\Routing;
 
 use Closure;
+use Flint\Http\Middleware;
+use Flint\Http\MiddlewarePipeline;
 use Flint\Http\QueryStringEncoder;
 use Flint\Http\Request;
 use Flint\Http\RequestHandler;
@@ -257,5 +259,22 @@ final class Router implements RequestHandler
         }
 
         return $path . '?' . $queryString;
+    }
+
+    public function addHandler(
+        string $method,
+        string $path,
+        RequestHandler $handler,
+        ?string $name = null,
+        Middleware ...$middleware,
+    ): void {
+        $pipeline = new MiddlewarePipeline($handler, ...$middleware);
+
+        $this->add(
+            $method,
+            $path,
+            $pipeline->handle(...),
+            $name,
+        );
     }
 }
