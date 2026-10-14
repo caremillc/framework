@@ -39,6 +39,16 @@ final class Router implements RequestHandler
     private array $registrations = [];
 
     /**
+     * @var list<array{
+     *     method: string,
+     *     path: string,
+     *     name: string|null,
+     *     constraints: array<string, string>
+     * }>
+     */
+    private array $routeDescriptions = [];
+
+    /**
      * @param callable(Request): mixed $handler
      * @param array<array-key, mixed> $constraints
      */
@@ -105,6 +115,19 @@ final class Router implements RequestHandler
         if ($name !== null) {
             $this->namedRoutes[$name] = $pattern;
         }
+
+        $constraintDescriptions = [];
+
+        foreach ($pattern->constraints() as $parameter => $constraint) {
+            $constraintDescriptions[$parameter] = strtolower($constraint->name);
+        }
+
+        $this->routeDescriptions[] = [
+            'method' => $method,
+            'path' => $path,
+            'name' => $name,
+            'constraints' => $constraintDescriptions,
+        ];
     }
 
 
@@ -313,5 +336,18 @@ final class Router implements RequestHandler
             $namePrefix,
             ...$middleware,
         );
+    }
+
+    /**
+     * @return list<array{
+     *     method: string,
+     *     path: string,
+     *     name: string|null,
+     *     constraints: array<string, string>
+     * }>
+     */
+    public function describe(): array
+    {
+        return $this->routeDescriptions;
     }
 }

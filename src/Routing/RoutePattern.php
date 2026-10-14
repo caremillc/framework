@@ -197,4 +197,12 @@ final readonly class RoutePattern
 
         return strtr($this->template, $replacements);
     }
+
+    /**
+     * @return array<string, RouteConstraint>
+     */
+    public function constraints(): array
+    {
+        return $this->constraints;
+    }
 }
