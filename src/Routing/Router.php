@@ -40,16 +40,18 @@ final class Router implements RequestHandler
 
     /**
      * @param callable(Request): mixed $handler
+     * @param array<array-key, mixed> $constraints
      */
     public function add(
         string $method,
         string $path,
         callable $handler,
         ?string $name = null,
+        array $constraints = [],
     ): void {
         new Request(method: $method);
 
-        $pattern = new RoutePattern($path);
+        $pattern = new RoutePattern($path, $constraints);
 
         if ($name !== null) {
             if (
@@ -104,6 +106,7 @@ final class Router implements RequestHandler
             $this->namedRoutes[$name] = $pattern;
         }
     }
+
 
 
     public function handle(Request $request): Response
@@ -278,6 +281,27 @@ final class Router implements RequestHandler
         );
     }
 
+    /**
+     * @param array<array-key, mixed> $constraints
+     */
+    public function addConstrainedHandler(
+        string $method,
+        string $path,
+        RequestHandler $handler,
+        array $constraints,
+        ?string $name = null,
+        Middleware ...$middleware,
+    ): void {
+        $pipeline = new MiddlewarePipeline($handler, ...$middleware);
+
+        $this->add(
+            $method,
+            $path,
+            $pipeline->handle(...),
+            $name,
+            $constraints,
+        );
+    }
     public function group(
         string $prefix = '',
         string $namePrefix = '',

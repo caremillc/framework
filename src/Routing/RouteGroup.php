@@ -109,4 +109,40 @@ final readonly class RouteGroup
             );
         }
     }
+
+    /**
+     * @param array<array-key, mixed> $constraints
+     */
+    public function addConstrainedHandler(
+        string $method,
+        string $path,
+        RequestHandler $handler,
+        array $constraints,
+        ?string $name = null,
+        Middleware ...$middleware,
+    ): void {
+        new RoutePattern($path);
+
+        if ($name !== null) {
+            if ($name === '') {
+                throw new InvalidArgumentException(
+                    'A route name must not be empty.',
+                );
+            }
+
+            self::validateNamePrefix($name);
+        }
+
+        $this->router->addConstrainedHandler(
+            $method,
+            $this->prefix . $path,
+            $handler,
+            $constraints,
+            $name === null ? null : $this->namePrefix . $name,
+            ...array_merge(
+                $this->middleware,
+                array_values($middleware),
+            ),
+        );
+    }
 }

@@ -14,10 +14,18 @@ final readonly class RoutePattern
     /** @var list<string> */
     private array $parameterNames;
 
+    /** @var array<string, RouteConstraint> */
+    private array $constraints;
+
     private string $template;
 
-    public function __construct(string $pattern)
-    {
+    /**
+     * @param array<array-key, mixed> $constraints
+     */
+    public function __construct(
+        string $pattern,
+        array $constraints = [],
+    ) {
         $regexSegments = [];
         $validationSegments = [];
         $parameterNames = [];
@@ -55,7 +63,6 @@ final readonly class RoutePattern
             $validationSegments[] = $segment;
         }
 
-        // Reuse the existing origin-form target validation.
         $validation = new Request(
             target: implode('/', $validationSegments),
         );
@@ -66,8 +73,33 @@ final readonly class RoutePattern
             );
         }
 
+        $validatedConstraints = [];
+
+        foreach ($constraints as $name => $constraint) {
+            if (
+                !is_string($name)
+                || !in_array($name, $parameterNames, true)
+            ) {
+                throw new InvalidArgumentException(
+                    'Constraints must refer to an existing route parameter.',
+                );
+            }
+
+            if (!$constraint instanceof RouteConstraint) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Constraint for "%s" must be a RouteConstraint.',
+                        $name,
+                    ),
+                );
+            }
+
+            $validatedConstraints[$name] = $constraint;
+        }
+
         $this->regex = '~\A' . implode('/', $regexSegments) . '\z~';
         $this->parameterNames = $parameterNames;
+        $this->constraints = $validatedConstraints;
         $this->template = $pattern;
     }
 
@@ -96,7 +128,14 @@ final readonly class RoutePattern
         $parameters = [];
 
         foreach ($this->parameterNames as $index => $name) {
-            $parameters[$name] = $matches[$index + 1];
+            $value = $matches[$index + 1];
+            $constraint = $this->constraints[$name] ?? null;
+
+            if ($constraint !== null && !$constraint->matches($value)) {
+                return null;
+            }
+
+            $parameters[$name] = $value;
         }
 
         return $parameters;
@@ -110,7 +149,7 @@ final readonly class RoutePattern
         $replacements = [];
 
         foreach ($this->parameterNames as $name) {
-            if (! array_key_exists($name, $parameters)) {
+            if (!array_key_exists($name, $parameters)) {
                 throw new InvalidArgumentException(
                     sprintf('Missing route parameter "%s".', $name),
                 );
@@ -118,7 +157,7 @@ final readonly class RoutePattern
 
             $value = $parameters[$name];
 
-            if (! is_string($value) || $value === '') {
+            if (!is_string($value) || $value === '') {
                 throw new InvalidArgumentException(
                     sprintf(
                         'Route parameter "%s" must contain a non-empty string.',
@@ -136,6 +175,17 @@ final readonly class RoutePattern
                 );
             }
 
+            $constraint = $this->constraints[$name] ?? null;
+
+            if ($constraint !== null && !$constraint->matches($value)) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Route parameter "%s" does not satisfy its constraint.',
+                        $name,
+                    ),
+                );
+            }
+
             $replacements['{' . $name . '}'] = rawurlencode($value);
         }
 
@@ -147,5 +197,4 @@ final readonly class RoutePattern
 
         return strtr($this->template, $replacements);
     }
-
 }
