@@ -277,4 +277,17 @@ final class Router implements RequestHandler
             $name,
         );
     }
+
+    public function group(
+        string $prefix = '',
+        string $namePrefix = '',
+        Middleware ...$middleware,
+    ): RouteGroup {
+        return new RouteGroup(
+            $this,
+            $prefix,
+            $namePrefix,
+            ...$middleware,
+        );
+    }
 }
