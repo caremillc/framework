@@ -14,19 +14,26 @@ final class JsonObjectDecoder
     public static function decode(
         string $body,
         int $maxDepth = 64,
+        bool $bigIntegersAsStrings = true,
     ): stdClass {
         if ($maxDepth < 1 || $maxDepth > 512) {
             throw new InvalidArgumentException(
-                'JSON decoding depth must be between 1 and 512.',
+                'JSON depth must be between 1 and 512.',
             );
         }
 
+        $flags = JSON_THROW_ON_ERROR;
+
+        if ($bigIntegersAsStrings) {
+            $flags |= JSON_BIGINT_AS_STRING;
+        }
+
         try {
-            $decoded = json_decode(
+            $document = json_decode(
                 $body,
-                associative: false,
-                depth: $maxDepth,
-                flags: JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING,
+                false,
+                $maxDepth,
+                $flags,
             );
         } catch (JsonException $exception) {
             throw new InvalidJsonException(
@@ -35,12 +42,12 @@ final class JsonObjectDecoder
             );
         }
 
-        if (! $decoded instanceof stdClass) {
+        if (!$document instanceof stdClass) {
             throw new InvalidJsonException(
                 'The JSON request body must contain an object.',
             );
         }
 
-        return $decoded;
+        return $document;
     }
 }
