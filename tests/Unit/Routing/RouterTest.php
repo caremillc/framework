@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Tests\Unit\Routing;
 
@@ -18,7 +18,7 @@ final class RouterTest extends TestCase
 {
     public function testReturnsTheMatchedHandlerResponse(): void
     {
-        $router = new Router();
+        $router   = new Router();
         $expected = ResponseFactory::text('Found');
 
         $router->add(
@@ -33,24 +33,60 @@ final class RouterTest extends TestCase
         );
     }
 
-    public function testQueryDoesNotAffectMatchingAndOriginalRequestIsPassed(): void
+    public function testQueryDoesNotAffectMatchingAndOriginalRequestIsUnchanged(): void
     {
         $router = new Router();
-        $request = new Request(target: '/items?page=2');
-        $expected = ResponseFactory::text('Found');
+
+        $original = new Request(
+            method: 'GET',
+            target: '/health?probe=1',
+            attributes: [
+                'application.context' => 'preserved',
+                'route.name'          => 'incoming.value',
+            ],
+        );
+
+        $received = null;
 
         $router->add(
             'GET',
-            '/items',
-            static function (Request $received) use ($request, $expected): Response {
-                self::assertSame($request, $received);
-                self::assertSame('page=2', $received->queryString());
+            '/health',
+            static function (Request $request) use (&$received): \Flint\Http\Response {
+                $received = $request;
 
-                return $expected;
+                return \Flint\Http\ResponseFactory::text('ok');
             },
+            'health',
         );
 
-        self::assertSame($expected, $router->handle($request));
+        $response = $router->handle($original);
+
+        self::assertSame(200, $response->status());
+        self::assertSame('ok', $response->body());
+
+        self::assertInstanceOf(Request::class, $received);
+        self::assertNotSame($original, $received);
+
+        self::assertSame($original->method(), $received->method());
+        self::assertSame($original->target(), $received->target());
+        self::assertSame($original->path(), $received->path());
+        self::assertSame('probe=1', $received->queryString());
+        self::assertSame($original->headers(), $received->headers());
+        self::assertSame($original->body(), $received->body());
+
+        self::assertSame(
+            'preserved',
+            $received->attribute('application.context'),
+        );
+
+        self::assertSame('health', $received->attribute('route.name'));
+
+        self::assertSame(
+            'incoming.value',
+            $original->attribute('route.name'),
+        );
+
+        self::assertSame('/health?probe=1', $original->target());
     }
 
     public function testUnknownPathReturnsNotFound(): void
@@ -119,13 +155,13 @@ final class RouterTest extends TestCase
             'GET',
             '/items',
             static fn (Request $request): Response =>
-                ResponseFactory::text('GET handler'),
+            ResponseFactory::text('GET handler'),
         );
         $router->add(
             'HEAD',
             '/items',
             static fn (Request $request): Response =>
-                ResponseFactory::text('HEAD handler'),
+            ResponseFactory::text('HEAD handler'),
         );
 
         $response = $router->handle(
@@ -137,7 +173,7 @@ final class RouterTest extends TestCase
 
     public function testDuplicateRegistrationPreservesOriginalHandler(): void
     {
-        $router = new Router();
+        $router   = new Router();
         $original = ResponseFactory::text('Original');
 
         $router->add(
@@ -151,7 +187,7 @@ final class RouterTest extends TestCase
                 'GET',
                 '/items',
                 static fn (Request $request): Response =>
-                    ResponseFactory::text('Replacement'),
+                ResponseFactory::text('Replacement'),
             );
 
             self::fail('Duplicate registration must fail.');
@@ -174,8 +210,8 @@ final class RouterTest extends TestCase
     public static function invalidRoutePaths(): iterable
     {
         yield 'relative path' => ['items'];
-        yield 'query string' => ['/items?page=2'];
-        yield 'fragment' => ['/items#details'];
+        yield 'query string'  => ['/items?page=2'];
+        yield 'fragment'      => ['/items#details'];
     }
 
     #[DataProvider('invalidRoutePaths')]
@@ -221,7 +257,7 @@ final class RouterTest extends TestCase
 
     public function testHandlerExceptionPropagatesUnchanged(): void
     {
-        $router = new Router();
+        $router  = new Router();
         $failure = new RuntimeException('Handler failed.');
 
         $router->add(
@@ -247,7 +283,7 @@ final class RouterTest extends TestCase
     public static function distinctPaths(): iterable
     {
         yield 'trailing slash' => ['/files/a/b/'];
-        yield 'encoded slash' => ['/files/a%2Fb'];
+        yield 'encoded slash'  => ['/files/a%2Fb'];
     }
 
     #[DataProvider('distinctPaths')]

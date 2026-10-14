@@ -101,7 +101,23 @@ final class Router implements RequestHandler
             );
         }
 
-        $callback = Closure::fromCallable($handler);
+        // $callback = Closure::fromCallable($handler);
+        $destination = Closure::fromCallable($handler);
+
+        $callback = static function (Request $request) use (
+            $destination,
+            $name,
+        ): mixed {
+            $context = $request->attribute('route.log_context');
+
+            if ($context instanceof RouteLogContext) {
+                $context->select($name);
+            }
+
+            return $destination(
+                $request->withAttribute('route.name', $name),
+            );
+        };
 
         if ($pattern->isLiteral()) {
             $this->literalRoutes[$path]['m:' . $method] = $callback;
