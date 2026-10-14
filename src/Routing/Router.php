@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Routing;
 
@@ -48,6 +48,8 @@ final class Router implements RequestHandler
      */
     private array $routeDescriptions = [];
 
+    private bool $frozen = false;
+
     /**
      * @param callable(Request): mixed $handler
      * @param array<array-key, mixed> $constraints
@@ -59,6 +61,7 @@ final class Router implements RequestHandler
         ?string $name = null,
         array $constraints = [],
     ): void {
+        $this->assertRegistrationOpen();
         new Request(method: $method);
 
         $pattern = new RoutePattern($path, $constraints);
@@ -69,7 +72,7 @@ final class Router implements RequestHandler
             ) {
                 throw new InvalidArgumentException(
                     'Route names must start with a letter or underscore '
-                        . 'and contain only letters, digits, underscores, dots, or hyphens.',
+                    . 'and contain only letters, digits, underscores, dots, or hyphens.',
                 );
             }
 
@@ -105,7 +108,7 @@ final class Router implements RequestHandler
         } else {
             $this->parameterRoutes[] = [
                 'pattern' => $pattern,
-                'method' => $method,
+                'method'  => $method,
                 'handler' => $callback,
             ];
         }
@@ -123,14 +126,12 @@ final class Router implements RequestHandler
         }
 
         $this->routeDescriptions[] = [
-            'method' => $method,
-            'path' => $path,
-            'name' => $name,
+            'method'      => $method,
+            'path'        => $path,
+            'name'        => $name,
             'constraints' => $constraintDescriptions,
         ];
     }
-
-
 
     public function handle(Request $request): Response
     {
@@ -140,8 +141,8 @@ final class Router implements RequestHandler
             return $this->handleLiteral($request, $literal);
         }
 
-        $methods = [];
-        $headFallback = null;
+        $methods        = [];
+        $headFallback   = null;
         $headParameters = [];
 
         foreach ($this->parameterRoutes as $route) {
@@ -165,7 +166,7 @@ final class Router implements RequestHandler
                 && $route['method'] === 'GET'
                 && $headFallback === null
             ) {
-                $headFallback = $route['handler'];
+                $headFallback   = $route['handler'];
                 $headParameters = $parameters;
             }
         }
@@ -277,7 +278,7 @@ final class Router implements RequestHandler
         array $parameters = [],
         array $query = [],
     ): string {
-        $path = $this->path($name, $parameters);
+        $path        = $this->path($name, $parameters);
         $queryString = QueryStringEncoder::encode($query);
 
         if ($queryString === '') {
@@ -350,4 +351,24 @@ final class Router implements RequestHandler
     {
         return $this->routeDescriptions;
     }
+
+    public function freeze(): void
+    {
+        $this->frozen = true;
+    }
+
+    public function isFrozen(): bool
+    {
+        return $this->frozen;
+    }
+
+    private function assertRegistrationOpen(): void
+    {
+        if ($this->frozen) {
+            throw new \LogicException(
+                'Routes cannot be registered after the router is frozen.',
+            );
+        }
+    }
+
 }
