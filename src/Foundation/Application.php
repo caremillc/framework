@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Flint\Foundation;
 
+use Closure;
 use Flint\Container\Container;
 use InvalidArgumentException;
 use LogicException;
@@ -19,6 +20,9 @@ final class Application
     private array $bootableProviders = [];
 
     private string $state = 'registering';
+
+    /** @var list<Closure(): void> */
+    private array $terminationCallbacks = [];
 
     public function __construct(string $basePath)
     {
@@ -106,6 +110,65 @@ final class Application
     public function isBooted(): bool
     {
         return $this->state === 'booted';
+    }
+
+    /**
+     * @param Closure(): void $callback
+     */
+    public function onTerminate(Closure $callback): void
+    {
+        if (
+            $this->state === 'terminating'
+            || $this->state === 'terminated'
+        ) {
+            throw new LogicException(
+                'Cleanup callbacks cannot be added after termination starts.',
+            );
+        }
+
+        $this->terminationCallbacks[] = $callback;
+    }
+
+    public function terminate(): void
+    {
+        if ($this->state === 'terminated') {
+            return;
+        }
+
+        if (
+            $this->state === 'registering-provider'
+            || $this->state === 'booting'
+            || $this->state === 'terminating'
+        ) {
+            throw new LogicException(
+                'Application termination cannot interrupt an active lifecycle operation.',
+            );
+        }
+
+        $this->state = 'terminating';
+
+        $callbacks = array_reverse($this->terminationCallbacks);
+        $this->terminationCallbacks = [];
+        $firstFailure = null;
+
+        foreach ($callbacks as $callback) {
+            try {
+                $callback();
+            } catch (Throwable $exception) {
+                $firstFailure ??= $exception;
+            }
+        }
+
+        $this->state = 'terminated';
+
+        if ($firstFailure !== null) {
+            throw $firstFailure;
+        }
+    }
+
+    public function isTerminated(): bool
+    {
+        return $this->state === 'terminated';
     }
 
 }
