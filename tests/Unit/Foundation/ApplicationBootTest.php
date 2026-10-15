@@ -150,6 +150,106 @@ final class ApplicationBootTest extends TestCase
         $application->boot();
     }
 
+    public function testBootDuringRegistrationIsRejected(): void
+    {
+        $application = new Application(__DIR__);
+        $rejected = false;
+
+        $application->register($this->provider(
+            static function (Container $container) use (
+                $application,
+                &$rejected,
+            ): void {
+                try {
+                    $application->boot();
+                } catch (LogicException) {
+                    $rejected = true;
+                }
+            },
+            static function (Container $container): void {
+            },
+        ));
+
+        self::assertTrue($rejected);
+        self::assertFalse($application->isBooted());
+
+        $application->boot();
+
+        self::assertTrue($application->isBooted());
+    }
+
+    public function testReentrantBootIsRejectedWithoutRepeatingCallbacks(): void
+    {
+        $application = new Application(__DIR__);
+        $attempts = 0;
+        $rejected = false;
+
+        $application->register($this->provider(
+            static function (Container $container): void {
+            },
+            static function (Container $container) use (
+                $application,
+                &$attempts,
+                &$rejected,
+            ): void {
+                ++$attempts;
+
+                // Guard against uncontrolled recursion if this regresses.
+                if ($attempts > 1) {
+                    self::fail('Boot callbacks must not be reentered.');
+                }
+
+                try {
+                    $application->boot();
+                } catch (LogicException) {
+                    $rejected = true;
+                }
+            },
+        ));
+
+        $application->boot();
+
+        self::assertTrue($rejected);
+        self::assertTrue($application->isBooted());
+        self::assertSame(1, $attempts);
+    }
+
+    public function testProviderRegistrationDuringBootIsRejected(): void
+    {
+        $application = new Application(__DIR__);
+        $rejected = false;
+
+        $lateProvider = $this->provider(
+            static function (Container $container): void {
+                self::fail('Registration during boot must not execute.');
+            },
+            static function (Container $container): void {
+                self::fail('A rejected provider must not boot.');
+            },
+        );
+
+        $application->register($this->provider(
+            static function (Container $container): void {
+            },
+            static function (Container $container) use (
+                $application,
+                $lateProvider,
+                &$rejected,
+            ): void {
+                try {
+                    $application->register($lateProvider);
+                } catch (LogicException) {
+                    $rejected = true;
+                }
+            },
+        ));
+
+        $application->boot();
+
+        self::assertTrue($rejected);
+        self::assertTrue($application->isBooted());
+    }
+
     /**
      * @param Closure(Container): void $register
      * @param Closure(Container): void $boot
