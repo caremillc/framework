@@ -6,12 +6,19 @@ namespace Flint\Foundation;
 
 use Flint\Container\Container;
 use InvalidArgumentException;
+use LogicException;
+use Throwable;
 
 final class Application
 {
     private readonly string $basePath;
 
     private readonly Container $container;
+
+    /** @var list<BootableServiceProvider> */
+    private array $bootableProviders = [];
+
+    private string $state = 'registering';
 
     public function __construct(string $basePath)
     {
@@ -45,6 +52,60 @@ final class Application
 
     public function register(ServiceProvider $provider): void
     {
-        $provider->register($this->container);
+        if ($this->state !== 'registering') {
+            throw new LogicException(
+                'Providers can only be registered before application boot.',
+            );
+        }
+
+        // Prevent reentrant registration or boot during registration.
+        $this->state = 'registering-provider';
+
+        try {
+            $provider->register($this->container);
+        } catch (Throwable $exception) {
+            $this->state = 'failed';
+
+            throw $exception;
+        }
+
+        if ($provider instanceof BootableServiceProvider) {
+            $this->bootableProviders[] = $provider;
+        }
+
+        $this->state = 'registering';
     }
+
+    public function boot(): void
+    {
+        if ($this->state === 'booted') {
+            return;
+        }
+
+        if ($this->state !== 'registering') {
+            throw new LogicException(
+                'Application boot requires completed registration and no prior failure.',
+            );
+        }
+
+        $this->state = 'booting';
+
+        try {
+            foreach ($this->bootableProviders as $provider) {
+                $provider->boot($this->container);
+            }
+        } catch (Throwable $exception) {
+            $this->state = 'failed';
+
+            throw $exception;
+        }
+
+        $this->state = 'booted';
+    }
+
+    public function isBooted(): bool
+    {
+        return $this->state === 'booted';
+    }
+
 }
