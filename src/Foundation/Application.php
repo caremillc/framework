@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Flint\Foundation;
 
@@ -34,13 +34,13 @@ final class Application
 
         $resolvedPath = realpath($basePath);
 
-        if ($resolvedPath === false || !is_dir($resolvedPath)) {
+        if ($resolvedPath === false || ! is_dir($resolvedPath)) {
             throw new InvalidArgumentException(
                 'The application base path must reference an existing directory.',
             );
         }
 
-        $this->basePath = $resolvedPath;
+        $this->basePath  = $resolvedPath;
         $this->container = new Container();
     }
 
@@ -109,7 +109,8 @@ final class Application
 
     public function isBooted(): bool
     {
-        return $this->state === 'booted';
+        return $this->state === 'booted'
+        || $this->state === 'running';
     }
 
     /**
@@ -138,6 +139,7 @@ final class Application
         if (
             $this->state === 'registering-provider'
             || $this->state === 'booting'
+            || $this->state === 'running'
             || $this->state === 'terminating'
         ) {
             throw new LogicException(
@@ -147,9 +149,9 @@ final class Application
 
         $this->state = 'terminating';
 
-        $callbacks = array_reverse($this->terminationCallbacks);
+        $callbacks                  = array_reverse($this->terminationCallbacks);
         $this->terminationCallbacks = [];
-        $firstFailure = null;
+        $firstFailure               = null;
 
         foreach ($callbacks as $callback) {
             try {
@@ -169,6 +171,55 @@ final class Application
     public function isTerminated(): bool
     {
         return $this->state === 'terminated';
+    }
+
+    /**
+     * @template TResult
+     *
+     * @param Closure(self): TResult $operation
+     *
+     * @return TResult
+     */
+    public function run(Closure $operation): mixed
+    {
+        if (
+            $this->state !== 'registering'
+            && $this->state !== 'booted'
+        ) {
+            throw new LogicException(
+                'Application execution requires a fresh or booted application.',
+            );
+        }
+
+        $executionFailure = null;
+
+        try {
+            $this->boot();
+            $this->state = 'running';
+
+            return $operation($this);
+        } catch (Throwable $exception) {
+            $executionFailure = $exception;
+
+            throw $exception;
+        } finally {
+            if ($this->state === 'running') {
+                $this->state = 'booted';
+            }
+
+            try {
+                $this->terminate();
+            } catch (Throwable $terminationFailure) {
+                if ($executionFailure !== null) {
+                    throw new ApplicationRunException(
+                        $executionFailure,
+                        $terminationFailure,
+                    );
+                }
+
+                throw $terminationFailure;
+            }
+        }
     }
 
 }
