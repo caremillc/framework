@@ -16,32 +16,39 @@ final class QueryParametersTest extends TestCase
         $query = new QueryParameters([]);
 
         self::assertFalse($query->has('missing'));
-
         self::assertNull($query->string('missing'));
         self::assertNull($query->integer('missing'));
         self::assertNull($query->boolean('missing'));
 
         self::assertSame('fallback', $query->string('missing', 'fallback'));
-        self::assertSame(10, $query->integer('missing', 10));
+        self::assertSame(12, $query->integer('missing', 12));
         self::assertFalse($query->boolean('missing', false));
     }
 
-    public function testPresentEmptyStringDoesNotUseDefault(): void
+    public function testPresentStringsPreserveTheirBytes(): void
     {
-        $query = new QueryParameters(['name' => '']);
+        $query = new QueryParameters([
+            'empty' => '',
+            'name' => ' Ada ',
+            'zero' => '0',
+        ]);
 
-        self::assertTrue($query->has('name'));
-        self::assertSame('', $query->string('name', 'fallback'));
+        self::assertTrue($query->has('empty'));
+        self::assertSame('', $query->string('empty', 'fallback'));
+        self::assertSame(' Ada ', $query->string('name'));
+        self::assertSame('0', $query->string('zero'));
     }
 
-    public function testSourceChangesDoNotChangeStoredValues(): void
+    public function testConstructionCapturesIndependentValues(): void
     {
         $values = ['name' => 'Ada'];
-        $query = new QueryParameters($values);
+        $first = new QueryParameters($values);
 
         $values['name'] = 'Grace';
+        $second = new QueryParameters($values);
 
-        self::assertSame('Ada', $query->string('name'));
+        self::assertSame('Ada', $first->string('name'));
+        self::assertSame('Grace', $second->string('name'));
     }
 
     #[DataProvider('validIntegers')]
@@ -49,9 +56,9 @@ final class QueryParametersTest extends TestCase
         string $value,
         int $expected,
     ): void {
-        $query = new QueryParameters(['count' => $value]);
+        $query = new QueryParameters(['number' => $value]);
 
-        self::assertSame($expected, $query->integer('count'));
+        self::assertSame($expected, $query->integer('number'));
     }
 
     /**
@@ -67,14 +74,13 @@ final class QueryParametersTest extends TestCase
     }
 
     #[DataProvider('invalidIntegers')]
-    public function testInvalidIntegersDoNotFallBackToDefault(
-        string $value,
-    ): void {
-        $query = new QueryParameters(['count' => $value]);
+    public function testInvalidIntegersAreRejected(string $value): void
+    {
+        $query = new QueryParameters(['number' => $value]);
 
         $this->expectException(InvalidArgumentException::class);
 
-        $query->integer('count', 10);
+        $query->integer('number');
     }
 
     /**
@@ -83,18 +89,18 @@ final class QueryParametersTest extends TestCase
     public static function invalidIntegers(): iterable
     {
         yield 'empty' => [''];
-        yield 'leading zero' => ['01'];
-        yield 'explicit plus' => ['+1'];
+        yield 'leading zero' => ['02'];
+        yield 'explicit plus' => ['+2'];
         yield 'negative zero' => ['-0'];
-        yield 'leading whitespace' => [' 1'];
-        yield 'trailing whitespace' => ['1 '];
-        yield 'decimal' => ['1.5'];
-        yield 'exponent' => ['1e3'];
-        yield 'overflow' => [(string) PHP_INT_MAX . '0'];
+        yield 'leading whitespace' => [' 2'];
+        yield 'decimal' => ['2.0'];
+        yield 'exponent' => ['2e1'];
+        yield 'positive overflow' => [(string) PHP_INT_MAX . '0'];
+        yield 'negative overflow' => [(string) PHP_INT_MIN . '0'];
     }
 
     #[DataProvider('validBooleans')]
-    public function testSupportedBooleansAreAccepted(
+    public function testExplicitBooleanValuesAreAccepted(
         string $value,
         bool $expected,
     ): void {
@@ -115,14 +121,13 @@ final class QueryParametersTest extends TestCase
     }
 
     #[DataProvider('invalidBooleans')]
-    public function testInvalidBooleansDoNotFallBackToDefault(
-        string $value,
-    ): void {
+    public function testOtherBooleanValuesAreRejected(string $value): void
+    {
         $query = new QueryParameters(['enabled' => $value]);
 
         $this->expectException(InvalidArgumentException::class);
 
-        $query->boolean('enabled', false);
+        $query->boolean('enabled');
     }
 
     /**
@@ -147,16 +152,15 @@ final class QueryParametersTest extends TestCase
         new QueryParameters($values);
     }
 
-
     /**
      * @return iterable<string, array{array<array-key, mixed>}>
      */
     public static function invalidMaps(): iterable
     {
         yield 'empty name' => [['' => 'value']];
-        yield 'numeric name' => [[0 => 'value']];
-        yield 'integer value' => [['count' => 1]];
+        yield 'integer name' => [[0 => 'value']];
         yield 'null value' => [['name' => null]];
-        yield 'nested value' => [['filter' => ['name' => 'Ada']]];
+        yield 'integer value' => [['repeat' => 2]];
+        yield 'array value' => [['name' => ['Ada']]];
     }
 }
