@@ -14,23 +14,18 @@ final readonly class QueryParameters
     /**
      * @param array<array-key, mixed> $values
      */
-    public function __construct(array $values = [])
+    public function __construct(array $values)
     {
         $validated = [];
 
         foreach ($values as $name => $value) {
-            if (! is_string($name) || $name === '') {
+            if (
+                ! is_string($name)
+                || $name === ''
+                || ! is_string($value)
+            ) {
                 throw new InvalidArgumentException(
-                    'Query parameter names must be non-empty strings.',
-                );
-            }
-
-            if (! is_string($value)) {
-                throw new InvalidArgumentException(
-                    sprintf(
-                        'Query parameter "%s" must contain a string.',
-                        $name,
-                    ),
+                    'Query parameters require non-empty string names and string values.',
                 );
             }
 
@@ -62,10 +57,12 @@ final readonly class QueryParameters
 
         $value = $this->values[$name];
 
-        if (preg_match('/\A(?:0|-?[1-9][0-9]*)\z/', $value) !== 1) {
+        if (
+            preg_match('/\A(?:0|-?[1-9][0-9]*)\z/', $value) !== 1
+        ) {
             throw new InvalidArgumentException(
                 sprintf(
-                    'Query parameter "%s" must contain a canonical integer.',
+                    'Query parameter "%s" must contain a canonical decimal integer.',
                     $name,
                 ),
             );
