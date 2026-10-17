@@ -19,7 +19,8 @@ final class TransactionManager
 
     public function __construct(
         private readonly PDO $connection,
-    ) {}
+    ) {
+    }
 
     /**
      * @template TResult
