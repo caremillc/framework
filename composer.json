@@ -50,7 +50,10 @@
             "@php -l src/Config/ConfigurationValidator.php",
             "@php -l tests/Unit/Config/ConfigurationLoaderTest.php",
             "@php -l tests/Unit/Config/ConfigurationValidatorTest.php",
-            "@php -l tests/Unit/Config/ConfigurationIntegrationTest.php"
+            "@php -l tests/Unit/Config/ConfigurationIntegrationTest.php",
+            "@php -l src/Logging/LogLevel.php",
+            "@php -l src/Logging/JsonLogger.php",
+            "@php -l tests/Unit/Logging/JsonLoggerTest.php"
         ],
         "check": [
             "composer validate --strict",

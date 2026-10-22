@@ -31,14 +31,28 @@ final class Application
 
     private readonly Container $container;
 
+    private readonly ProviderRegistry $providers;
+
     public function __construct(?Container $container = null)
     {
         $this->container = $container ?? new Container();
+        $this->providers = new ProviderRegistry($this->container);
     }
 
     public function container(): Container
     {
         return $this->container;
+    }
+
+    public function registerProvider(ServiceProvider $provider): void
+    {
+        if ($this->state !== self::CREATED) {
+            throw new LogicException(
+                'Service providers must be registered before booting.'
+            );
+        }
+
+        $this->providers->add($provider);
     }
 
     /**
@@ -87,6 +101,8 @@ final class Application
         $this->state = self::BOOTING;
 
         try {
+            $this->providers->boot();
+
             foreach ($this->bootCallbacks as $callback) {
                 $callback($this);
             }
