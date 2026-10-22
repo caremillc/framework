@@ -1,0 +1,35 @@
+O:23:"PHPStan\Cache\CacheItem":2:{s:11:"variableKey";s:38:"v3-6.73.0.6-dev-master@e4f5f6c-8.5.11-";s:4:"data";a:17:{s:4:"name";s:15:"version_compare";s:10:"parameters";a:3:{s:8:"version1";a:13:{s:4:"name";s:8:"version1";s:7:"default";N;s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:6:"string";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:0:{}s:9:"startLine";i:43;s:7:"endLine";i:43;s:11:"startColumn";i:9;s:9:"endColumn";i:24;s:14:"parameterIndex";i:0;s:10:"isOptional";b:0;}s:8:"version2";a:13:{s:4:"name";s:8:"version2";s:7:"default";N;s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:6:"string";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:0:{}s:9:"startLine";i:44;s:7:"endLine";i:44;s:11:"startColumn";i:9;s:9:"endColumn";i:24;s:14:"parameterIndex";i:1;s:10:"isOptional";b:0;}s:8:"operator";a:13:{s:4:"name";s:8:"operator";s:7:"default";a:2:{s:4:"code";s:5:"\null";s:10:"attributes";a:6:{s:9:"startLine";i:46;s:7:"endLine";i:46;s:13:"startTokenPos";i:117;s:12:"startFilePos";i:1623;s:11:"endTokenPos";i:117;s:10:"endFilePos";i:1626;}}s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionUnionType";s:4:"data";a:1:{s:5:"types";a:2:{i:0;a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:6:"string";s:12:"isIdentifier";b:1;}}i:1;a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:4:"null";s:12:"isIdentifier";b:1;}}}}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:1:{i:0;a:3:{s:4:"name";s:33:"JetBrains\PhpStorm\ExpectedValues";s:10:"isRepeated";b:0;s:9:"arguments";a:1:{s:6:"values";a:2:{s:4:"code";s:81:"["<", "lt", "<=", "le", ">", "gt", ">=", "ge", "==", "=", "eq", "!=", "<>", "ne"]";s:10:"attributes";a:6:{s:9:"startLine";i:45;s:7:"endLine";i:45;s:13:"startTokenPos";i:65;s:12:"startFilePos";i:1511;s:11:"endTokenPos";i:106;s:10:"endFilePos";i:1591;}}}}}s:9:"startLine";i:45;s:7:"endLine";i:46;s:11:"startColumn";i:9;s:9:"endColumn";i:32;s:14:"parameterIndex";i:2;s:10:"isOptional";b:1;}}s:16:"returnsReference";b:0;s:10:"returnType";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionUnionType";s:4:"data";a:1:{s:5:"types";a:2:{i:0;a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:3:"int";s:12:"isIdentifier";b:1;}}i:1;a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:4:"bool";s:12:"isIdentifier";b:1;}}}}}s:10:"attributes";a:3:{i:0;a:3:{s:4:"name";s:23:"JetBrains\PhpStorm\Pure";s:10:"isRepeated";b:0;s:9:"arguments";a:0:{}}i:1;a:3:{s:4:"name";s:33:"JetBrains\PhpStorm\ExpectedValues";s:10:"isRepeated";b:0;s:9:"arguments";a:1:{i:0;a:2:{s:4:"code";s:25:"[-1, 0, 1, \false, \true]";s:10:"attributes";a:6:{s:9:"startLine";i:40;s:7:"endLine";i:40;s:13:"startTokenPos";i:15;s:12:"startFilePos";i:1271;s:11:"endTokenPos";i:30;s:10:"endFilePos";i:1293;}}}}i:2;a:3:{s:4:"name";s:57:"JetBrains\PhpStorm\Internal\PhpStormStubsElementAvailable";s:10:"isRepeated";b:0;s:9:"arguments";a:1:{s:4:"from";a:2:{s:4:"code";s:5:"'8.0'";s:10:"attributes";a:6:{s:9:"startLine";i:41;s:7:"endLine";i:41;s:13:"startTokenPos";i:40;s:12:"startFilePos";i:1368;s:11:"endTokenPos";i:40;s:10:"endFilePos";i:1372;}}}}}s:10:"docComment";s:1038:"/**
+ * Compares two "PHP-standardized" version number strings
+ * @link https://php.net/manual/en/function.version-compare.php
+ * @param string $version1 <p>
+ * First version number.
+ * </p>
+ * @param string $version2 <p>
+ * Second version number.
+ * </p>
+ * @param string|null $operator [optional] <p>
+ * If you specify the third optional operator
+ * argument, you can test for a particular relationship. The
+ * possible operators are: &lt;,
+ * lt, &lt;=,
+ * le, &gt;,
+ * gt, &gt;=,
+ * ge, ==,
+ * =, eq,
+ * !=, &lt;&gt;,
+ * ne respectively.
+ * </p>
+ * <p>
+ * This parameter is case-sensitive, so values should be lowercase.
+ * </p>
+ * @return int|bool By default, version_compare returns
+ * -1 if the first version is lower than the second,
+ * 0 if they are equal, and
+ * 1 if the second is lower.
+ * </p>
+ * <p>
+ * When using the optional operator argument, the
+ * function will return true if the relationship is the one specified
+ * by the operator, false otherwise.
+ * @throws ValueError when a non-supported operator is provided.
+ */";s:9:"startLine";i:39;s:7:"endLine";i:49;s:11:"startColumn";i:5;s:9:"endColumn";i:5;s:10:"couldThrow";b:0;s:9:"isClosure";b:0;s:11:"isGenerator";b:0;s:10:"isVariadic";b:0;s:8:"isStatic";b:0;s:9:"namespace";N;s:13:"locatedSource";a:2:{s:5:"class";s:68:"PHPStan\BetterReflection\SourceLocator\Located\InternalLocatedSource";s:4:"data";a:4:{s:4:"name";s:15:"version_compare";s:8:"filename";s:39:"phpstorm-stubs:standard/standard_9.stub";s:13:"extensionName";s:8:"standard";s:9:"aliasName";N;}}}}
