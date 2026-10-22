@@ -45,7 +45,12 @@
             "@php -l src/Config/Environment.php",
             "@php -l src/Config/Configuration.php",
             "@php -l tests/Unit/Config/EnvironmentTest.php",
-            "@php -l tests/Unit/Config/ConfigurationTest.php"
+            "@php -l tests/Unit/Config/ConfigurationTest.php",
+            "@php -l src/Config/ConfigurationLoader.php",
+            "@php -l src/Config/ConfigurationValidator.php",
+            "@php -l tests/Unit/Config/ConfigurationLoaderTest.php",
+            "@php -l tests/Unit/Config/ConfigurationValidatorTest.php",
+            "@php -l tests/Unit/Config/ConfigurationIntegrationTest.php"
         ],
         "check": [
             "composer validate --strict",
