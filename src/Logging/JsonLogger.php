@@ -13,6 +13,12 @@ use Throwable;
 
 final class JsonLogger
 {
+    private const int MAX_CONTEXT_DEPTH = 8;
+
+    private const int MAX_STRING_LENGTH = 4096;
+
+    private const int MAX_CONTEXT_ITEMS = 100;
+
     /**
      * @var resource
      */
@@ -50,7 +56,7 @@ final class JsonLogger
     public function log(
         LogLevel $level,
         string $message,
-        array $context = []
+        array $context = [],
     ): void {
         if (!is_resource($this->stream)) {
             throw new RuntimeException(
@@ -64,7 +70,7 @@ final class JsonLogger
                 new DateTimeZone('UTC')
             )->format('Y-m-d\TH:i:s.u\Z'),
             'level' => $level->value,
-            'message' => $message,
+            'message' => $this->normalizeMessage($message),
             'context' => $this->sanitize($context),
         ];
 
@@ -108,16 +114,38 @@ final class JsonLogger
         }
     }
 
+    private function normalizeMessage(string $message): string
+    {
+        return $this->redactString(
+            substr($message, 0, self::MAX_STRING_LENGTH)
+        );
+    }
+
     /**
      * @param array<array-key, mixed> $context
      *
      * @return array<array-key, mixed>
      */
-    private function sanitize(array $context): array
-    {
+    private function sanitize(
+        array $context,
+        int $depth = 0,
+    ): array {
+        if ($depth >= self::MAX_CONTEXT_DEPTH) {
+            return ['_truncated' => '[MAX_DEPTH]'];
+        }
+
         $result = [];
+        $count = 0;
 
         foreach ($context as $key => $value) {
+            if ($count >= self::MAX_CONTEXT_ITEMS) {
+                $result['_truncated'] = '[MAX_ITEMS]';
+
+                break;
+            }
+
+            ++$count;
+
             if (
                 is_string($key)
                 && $this->isSensitiveKey($key)
@@ -137,14 +165,34 @@ final class JsonLogger
             }
 
             if (is_array($value)) {
-                $result[$key] = $this->sanitize($value);
+                $result[$key] = $this->sanitize(
+                    $value,
+                    $depth + 1
+                );
+
+                continue;
+            }
+
+            if (is_string($value)) {
+                $result[$key] = $this->redactString(
+                    substr(
+                        $value,
+                        0,
+                        self::MAX_STRING_LENGTH
+                    )
+                );
+
+                continue;
+            }
+
+            if (is_float($value) && !is_finite($value)) {
+                $result[$key] = '[NON_FINITE]';
 
                 continue;
             }
 
             if (
-                is_string($value)
-                || is_int($value)
+                is_int($value)
                 || is_float($value)
                 || is_bool($value)
                 || $value === null
@@ -158,6 +206,26 @@ final class JsonLogger
         }
 
         return $result;
+    }
+
+    private function redactString(string $value): string
+    {
+        $patterns = [
+            '/Bearer\s+[A-Za-z0-9._~+\/=-]+/i',
+            '/(password|passwd|secret|token|api[_-]?key)\s*[:=]\s*\S+/i',
+        ];
+
+        $redacted = preg_replace(
+            $patterns,
+            '[REDACTED]',
+            $value
+        );
+
+        if ($redacted === null) {
+            return '[REDACTION_ERROR]';
+        }
+
+        return $redacted;
     }
 
     private function isSensitiveKey(string $key): bool

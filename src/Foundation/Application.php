@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Careminate\Foundation;
 
 use Careminate\Container\Container;
+use Careminate\Logging\CorrelationId;
+use Careminate\Logging\ExceptionReporter;
 use Closure;
 use LogicException;
 use Throwable;
@@ -33,6 +35,10 @@ final class Application
 
     private readonly ProviderRegistry $providers;
 
+    private ?ExceptionReporter $exceptionReporter = null;
+
+    private ?CorrelationId $correlationId = null;
+
     public function __construct(?Container $container = null)
     {
         $this->container = $container ?? new Container();
@@ -42,6 +48,25 @@ final class Application
     public function container(): Container
     {
         return $this->container;
+    }
+
+    public function setExceptionReporter(
+        ExceptionReporter $reporter,
+        ?CorrelationId $correlationId = null,
+    ): void {
+        if ($this->state !== self::CREATED) {
+            throw new LogicException(
+                'Exception reporter must be configured before booting.'
+            );
+        }
+
+        $this->exceptionReporter = $reporter;
+        $this->correlationId = $correlationId ?? CorrelationId::generate();
+    }
+
+    public function correlationId(): ?CorrelationId
+    {
+        return $this->correlationId;
     }
 
     public function registerProvider(ServiceProvider $provider): void
@@ -111,6 +136,8 @@ final class Application
         } catch (Throwable $exception) {
             $this->state = self::FAILED;
 
+            $this->reportFailure($exception);
+
             throw $exception;
         }
     }
@@ -140,6 +167,8 @@ final class Application
         }
 
         if ($failure !== null) {
+            $this->reportFailure($failure);
+
             throw $failure;
         }
     }
@@ -157,5 +186,21 @@ final class Application
     public function hasFailed(): bool
     {
         return $this->state === self::FAILED;
+    }
+
+    private function reportFailure(Throwable $exception): void
+    {
+        if ($this->exceptionReporter === null) {
+            return;
+        }
+
+        try {
+            $this->exceptionReporter->report(
+                $exception,
+                $this->correlationId,
+            );
+        } catch (Throwable) {
+            // Reporting must never replace the original failure.
+        }
     }
 }

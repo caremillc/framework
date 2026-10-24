@@ -1,0 +1,56 @@
+O:23:"PHPStan\Cache\CacheItem":2:{s:11:"variableKey";s:38:"v3-6.73.0.6-dev-master@e4f5f6c-8.5.11-";s:4:"data";a:17:{s:4:"name";s:6:"header";s:10:"parameters";a:3:{s:6:"header";a:13:{s:4:"name";s:6:"header";s:7:"default";N;s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:6:"string";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:0:{}s:9:"startLine";i:60;s:7:"endLine";i:60;s:11:"startColumn";i:21;s:9:"endColumn";i:34;s:14:"parameterIndex";i:0;s:10:"isOptional";b:0;}s:7:"replace";a:13:{s:4:"name";s:7:"replace";s:7:"default";a:2:{s:4:"code";s:5:"\true";s:10:"attributes";a:6:{s:9:"startLine";i:60;s:7:"endLine";i:60;s:13:"startTokenPos";i:23;s:12:"startFilePos";i:2336;s:11:"endTokenPos";i:23;s:10:"endFilePos";i:2339;}}s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:4:"bool";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:0:{}s:9:"startLine";i:60;s:7:"endLine";i:60;s:11:"startColumn";i:37;s:9:"endColumn";i:56;s:14:"parameterIndex";i:1;s:10:"isOptional";b:1;}s:13:"response_code";a:13:{s:4:"name";s:13:"response_code";s:7:"default";a:2:{s:4:"code";s:1:"0";s:10:"attributes";a:6:{s:9:"startLine";i:60;s:7:"endLine";i:60;s:13:"startTokenPos";i:32;s:12:"startFilePos";i:2363;s:11:"endTokenPos";i:32;s:10:"endFilePos";i:2363;}}s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:3:"int";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"attributes";a:0:{}s:9:"startLine";i:60;s:7:"endLine";i:60;s:11:"startColumn";i:59;s:9:"endColumn";i:80;s:14:"parameterIndex";i:2;s:10:"isOptional";b:1;}}s:16:"returnsReference";b:0;s:10:"returnType";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:4:"void";s:12:"isIdentifier";b:1;}}s:10:"attributes";a:0:{}s:10:"docComment";s:2040:"/**
+ * Send a raw HTTP header
+ * @link https://php.net/manual/en/function.header.php
+ * @param string $header <p>
+ * The header string.
+ * </p>
+ * <p>
+ * There are two special-case header calls. The first is a header that starts with the string "HTTP/"
+ * (case is not significant), which will be used to figure out the HTTP status code to send. For example,
+ * if you have configured Apache to use a PHP script to handle requests for missing files (using the ErrorDocument directive),
+ * you may want to make sure that your script generates the proper status code.
+ * </p>
+ * <p>
+ * Example:
+ * <code>
+ * <?php
+ * // This example illustrates the "HTTP/" special case
+ * // Better alternatives in typical use cases include:
+ * // 1. header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+ * //    (to override http status messages for clients that are still using HTTP/1.0)
+ * // 2. http_response_code(404); (to use the default message)
+ * header("HTTP/1.1 404 Not Found");
+ * ?>
+ * </code>
+ * </p>
+ * <p>
+ * The second special case is the "Location:" header. Not only does
+ * it send this header back to the browser, but it also returns a
+ * REDIRECT (302) status code to the browser
+ * unless the 201 or
+ * a 3xx status code has already been set.
+ * </p>
+ * <p>Example</p>
+ * <code>
+ * header("Location: http://www.example.com/");
+ * exit;
+ * </code>
+ * @param bool $replace [optional] <p>
+ * The optional replace parameter indicates
+ * whether the header should replace a previous similar header, or
+ * add a second header of the same type. By default it will replace,
+ * but if you pass in false as the second argument you can force
+ * multiple headers of the same type.
+ * </p>
+ * <p>For example:</p>
+ * <code>
+ * <?php
+ * header('WWW-Authenticate: Negotiate');
+ * header('WWW-Authenticate: NTLM', false);
+ * ?>
+ * </code>
+ * @param int $response_code <p>
+ * Forces the HTTP response code to the specified value. Note that this parameter only has an effect if the header is not empty.
+ * </p>
+ * @return void No value is returned.
+ */";s:9:"startLine";i:60;s:7:"endLine";i:62;s:11:"startColumn";i:5;s:9:"endColumn";i:5;s:10:"couldThrow";b:0;s:9:"isClosure";b:0;s:11:"isGenerator";b:0;s:10:"isVariadic";b:0;s:8:"isStatic";b:0;s:9:"namespace";N;s:13:"locatedSource";a:2:{s:5:"class";s:68:"PHPStan\BetterReflection\SourceLocator\Located\InternalLocatedSource";s:4:"data";a:4:{s:4:"name";s:6:"header";s:8:"filename";s:39:"phpstorm-stubs:standard/standard_4.stub";s:13:"extensionName";s:8:"standard";s:9:"aliasName";N;}}}}
