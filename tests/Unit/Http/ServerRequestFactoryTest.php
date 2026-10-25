@@ -280,4 +280,113 @@ final class ServerRequestFactoryTest extends TestCase
             'HTTP_' => 'invalid',
         ]);
     }
+
+
+    public function testAcceptsMatchingContentLengthAliases(): void
+    {
+        $request = new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'CONTENT_LENGTH' => '4',
+                'HTTP_CONTENT_LENGTH' => '4',
+            ],
+            'test',
+        );
+
+        self::assertSame(
+            '4',
+            $request->header('content-length'),
+        );
+    }
+
+    public function testRejectsConflictingContentLengthAliases(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class,
+        );
+
+        new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'CONTENT_LENGTH' => '4',
+                'HTTP_CONTENT_LENGTH' => '5',
+            ],
+            'test',
+        );
+    }
+
+    public function testAcceptsMatchingContentTypeAliases(): void
+    {
+        $request = new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_CONTENT_TYPE' => 'application/json',
+            ],
+            '{}',
+        );
+
+        self::assertSame(
+            'application/json',
+            $request->header('content-type'),
+        );
+    }
+
+    public function testRejectsConflictingContentTypeAliases(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class,
+        );
+
+        new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_CONTENT_TYPE' => 'text/plain',
+            ],
+            '{}',
+        );
+    }
+
+
+    public function testAcceptsMatchingContentLengthAliasesInReverseOrder(): void
+    {
+        $request = new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'HTTP_CONTENT_LENGTH' => '4',
+                'CONTENT_LENGTH' => '4',
+            ],
+            'test',
+        );
+
+        self::assertSame(
+            '4',
+            $request->header('content-length'),
+        );
+    }
+
+    public function testAcceptsMatchingContentTypeAliasesInReverseOrder(): void
+    {
+        $request = new ServerRequestFactory()->fromServer(
+            [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/submit',
+                'HTTP_CONTENT_TYPE' => 'application/json',
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            '{}',
+        );
+
+        self::assertSame(
+            'application/json',
+            $request->header('content-type'),
+        );
+    }
+
 }

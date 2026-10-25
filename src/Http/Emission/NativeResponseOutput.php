@@ -23,6 +23,8 @@ final class NativeResponseOutput implements ResponseOutput
 
     public function sendStatus(int $status): void
     {
+        $this->assertReady();
+
         http_response_code($status);
     }
 
@@ -30,6 +32,8 @@ final class NativeResponseOutput implements ResponseOutput
         string $name,
         string $value,
     ): void {
+        $this->assertReady();
+
         header(
             sprintf('%s: %s', $name, $value),
             true,

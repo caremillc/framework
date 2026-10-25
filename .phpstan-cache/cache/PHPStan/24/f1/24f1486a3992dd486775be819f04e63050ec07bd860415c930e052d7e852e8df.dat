@@ -1,0 +1,48 @@
+O:23:"PHPStan\Cache\CacheItem":2:{s:11:"variableKey";s:38:"v3-6.75.0.2-dev-master@e4f5f6c-8.5.11-";s:4:"data";a:17:{s:4:"name";s:20:"stream_socket_server";s:10:"parameters";a:5:{s:7:"address";a:14:{s:4:"name";s:7:"address";s:7:"default";N;s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:6:"string";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"docComment";N;s:10:"attributes";a:0:{}s:9:"startLine";i:52;s:7:"endLine";i:52;s:11:"startColumn";i:35;s:9:"endColumn";i:49;s:14:"parameterIndex";i:0;s:10:"isOptional";b:0;}s:10:"error_code";a:14:{s:4:"name";s:10:"error_code";s:7:"default";a:2:{s:4:"code";s:5:"\null";s:10:"attributes";a:6:{s:9:"startLine";i:52;s:7:"endLine";i:52;s:13:"startTokenPos";i:22;s:12:"startFilePos";i:2064;s:11:"endTokenPos";i:22;s:10:"endFilePos";i:2067;}}s:4:"type";N;s:10:"isVariadic";b:0;s:5:"byRef";b:1;s:10:"isPromoted";b:0;s:10:"docComment";N;s:10:"attributes";a:0:{}s:9:"startLine";i:52;s:7:"endLine";i:52;s:11:"startColumn";i:52;s:9:"endColumn";i:70;s:14:"parameterIndex";i:1;s:10:"isOptional";b:1;}s:13:"error_message";a:14:{s:4:"name";s:13:"error_message";s:7:"default";a:2:{s:4:"code";s:5:"\null";s:10:"attributes";a:6:{s:9:"startLine";i:52;s:7:"endLine";i:52;s:13:"startTokenPos";i:30;s:12:"startFilePos";i:2088;s:11:"endTokenPos";i:30;s:10:"endFilePos";i:2091;}}s:4:"type";N;s:10:"isVariadic";b:0;s:5:"byRef";b:1;s:10:"isPromoted";b:0;s:10:"docComment";N;s:10:"attributes";a:0:{}s:9:"startLine";i:52;s:7:"endLine";i:52;s:11:"startColumn";i:73;s:9:"endColumn";i:94;s:14:"parameterIndex";i:2;s:10:"isOptional";b:1;}s:5:"flags";a:14:{s:4:"name";s:5:"flags";s:7:"default";a:2:{s:4:"code";s:43:"\STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN";s:10:"attributes";a:6:{s:9:"startLine";i:52;s:7:"endLine";i:52;s:13:"startTokenPos";i:39;s:12:"startFilePos";i:2107;s:11:"endTokenPos";i:43;s:10:"endFilePos";i:2147;}}s:4:"type";a:2:{s:5:"class";s:55:"PHPStan\BetterReflection\Reflection\ReflectionNamedType";s:4:"data";a:2:{s:4:"name";s:3:"int";s:12:"isIdentifier";b:1;}}s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"docComment";N;s:10:"attributes";a:0:{}s:9:"startLine";i:52;s:7:"endLine";i:52;s:11:"startColumn";i:97;s:9:"endColumn";i:150;s:14:"parameterIndex";i:3;s:10:"isOptional";b:1;}s:7:"context";a:14:{s:4:"name";s:7:"context";s:7:"default";a:2:{s:4:"code";s:5:"\null";s:10:"attributes";a:6:{s:9:"startLine";i:52;s:7:"endLine";i:52;s:13:"startTokenPos";i:50;s:12:"startFilePos";i:2161;s:11:"endTokenPos";i:50;s:10:"endFilePos";i:2164;}}s:4:"type";N;s:10:"isVariadic";b:0;s:5:"byRef";b:0;s:10:"isPromoted";b:0;s:10:"docComment";N;s:10:"attributes";a:0:{}s:9:"startLine";i:52;s:7:"endLine";i:52;s:11:"startColumn";i:153;s:9:"endColumn";i:167;s:14:"parameterIndex";i:4;s:10:"isOptional";b:1;}}s:16:"returnsReference";b:0;s:10:"returnType";N;s:10:"attributes";a:0:{}s:10:"docComment";s:1786:"/**
+ * Create an Internet or Unix domain server socket
+ * @link https://php.net/manual/en/function.stream-socket-server.php
+ * @param string $address <p>
+ * The type of socket created is determined by the transport specified
+ * using standard URL formatting: transport://target.
+ * </p>
+ * <p>
+ * For Internet Domain sockets (AF_INET) such as TCP and UDP, the
+ * target portion of the
+ * remote_socket parameter should consist of a
+ * hostname or IP address followed by a colon and a port number. For
+ * Unix domain sockets, the target portion should
+ * point to the socket file on the filesystem.
+ * </p>
+ * <p>
+ * Depending on the environment, Unix domain sockets may not be available.
+ * A list of available transports can be retrieved using
+ * stream_get_transports. See
+ * for a list of built-in transports.
+ * </p>
+ * @param int &$error_code [optional] <p>
+ * If the optional errno and errstr
+ * arguments are present they will be set to indicate the actual system
+ * level error that occurred in the system-level socket(),
+ * bind(), and listen() calls. If
+ * the value returned in errno is
+ * 0 and the function returned false, it is an
+ * indication that the error occurred before the bind()
+ * call. This is most likely due to a problem initializing the socket.
+ * Note that the errno and
+ * errstr arguments will always be passed by reference.
+ * </p>
+ * @param string &$error_message [optional] <p>
+ * See errno description.
+ * </p>
+ * @param int $flags [optional] <p>
+ * A bitmask field which may be set to any combination of socket creation
+ * flags.
+ * </p>
+ * <p>
+ * For UDP sockets, you must use STREAM_SERVER_BIND as
+ * the flags parameter.
+ * </p>
+ * @param resource $context [optional] <p>
+ * </p>
+ * @return resource|false the created stream, or false on error.
+ */";s:9:"startLine";i:52;s:7:"endLine";i:54;s:11:"startColumn";i:5;s:9:"endColumn";i:5;s:10:"couldThrow";b:0;s:9:"isClosure";b:0;s:11:"isGenerator";b:0;s:10:"isVariadic";b:0;s:8:"isStatic";b:0;s:9:"namespace";N;s:13:"locatedSource";a:2:{s:5:"class";s:68:"PHPStan\BetterReflection\SourceLocator\Located\InternalLocatedSource";s:4:"data";a:4:{s:4:"name";s:20:"stream_socket_server";s:8:"filename";s:39:"phpstorm-stubs:standard/standard_6.stub";s:13:"extensionName";s:8:"standard";s:9:"aliasName";N;}}}}

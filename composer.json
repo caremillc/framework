@@ -93,7 +93,15 @@
             "@php -l src/Http/Emission/NativeResponseOutput.php",
             "@php -l src/Http/Emission/BufferedResponseOutput.php",
             "@php -l src/Http/Emission/ResponseEmitter.php",
-            "@php -l tests/Unit/Http/Emission/ResponseEmitterTest.php"
+            "@php -l tests/Unit/Http/Emission/ResponseEmitterTest.php",
+            "@php -l src/Http/Runtime/HttpRunner.php",
+            "@php -l tests/Unit/Http/Runtime/HttpRunnerTest.php",
+            "@php -l tests/Unit/Http/Runtime/HttpRuntimeHardeningTest.php",
+            "@php -l examples/frontend-demo/bootstrap.php",
+            "@php -l examples/frontend-demo/public/index.php",
+            "@php -l examples/frontend-demo/public/router.php",
+            "@php -l tests/Integration/FrontendControllerTest.php",
+            "@php -l tests/Integration/FrontendHttpServerTest.php"
         ],
         "check": [
             "composer validate --strict",

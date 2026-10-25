@@ -12,5 +12,9 @@
         <testsuite name="Careminate Unit Tests">
             <directory>tests/Unit</directory>
         </testsuite>
+
+        <testsuite name="Careminate Integration Tests">
+            <directory>tests/Integration</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

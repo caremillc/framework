@@ -104,6 +104,8 @@ final class ServerRequestFactory
         return $value;
     }
 
+
+
     /**
      * @param array<string, mixed> $server
      *
@@ -112,7 +114,9 @@ final class ServerRequestFactory
     private function extractHeaders(array $server): array
     {
         $headers = [];
-        $normalizedNames = [];
+
+        /** @var array<string, string> $sources */
+        $sources = [];
 
         foreach ($server as $key => $value) {
             if (
@@ -144,13 +148,38 @@ final class ServerRequestFactory
 
             if ($name === '') {
                 throw new InvalidArgumentException(
-                    'HTTP header name cannot be empty.'
+                    'HTTP header name cannot be empty.',
                 );
             }
 
             $normalizedName = strtolower($name);
 
-            if (isset($normalizedNames[$normalizedName])) {
+            if (isset($sources[$normalizedName])) {
+                $previousSource = $sources[$normalizedName];
+
+                $isContentTypeAlias = (
+                    $key === 'CONTENT_TYPE'
+                    && $previousSource === 'HTTP_CONTENT_TYPE'
+                ) || (
+                    $key === 'HTTP_CONTENT_TYPE'
+                    && $previousSource === 'CONTENT_TYPE'
+                );
+
+                $isContentLengthAlias = (
+                    $key === 'CONTENT_LENGTH'
+                    && $previousSource === 'HTTP_CONTENT_LENGTH'
+                ) || (
+                    $key === 'HTTP_CONTENT_LENGTH'
+                    && $previousSource === 'CONTENT_LENGTH'
+                );
+
+                if (
+                    ($isContentTypeAlias || $isContentLengthAlias)
+                    && $headers[$normalizedName] === $value
+                ) {
+                    continue;
+                }
+
                 throw new InvalidArgumentException(
                     sprintf(
                         'Duplicate HTTP header "%s".',
@@ -159,10 +188,11 @@ final class ServerRequestFactory
                 );
             }
 
-            $normalizedNames[$normalizedName] = true;
-            $headers[$name] = $value;
+            $sources[$normalizedName] = $key;
+            $headers[$normalizedName] = $value;
         }
 
         return $headers;
     }
+
 }
