@@ -101,7 +101,11 @@
             "@php -l examples/frontend-demo/public/index.php",
             "@php -l examples/frontend-demo/public/router.php",
             "@php -l tests/Integration/FrontendControllerTest.php",
-            "@php -l tests/Integration/FrontendHttpServerTest.php"
+            "@php -l tests/Integration/FrontendHttpServerTest.php",
+            "@php -l src/Http/Routing/RoutePattern.php",
+            "@php -l tests/Unit/Http/Routing/RoutePatternTest.php",
+            "@php -l tests/Unit/Http/Routing/DynamicRouterTest.php",
+            "@php -l tests/Unit/Http/RequestRouteParametersTest.php"
         ],
         "check": [
             "composer validate --strict",

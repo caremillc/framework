@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 
 namespace Careminate\Http\Routing;
 
@@ -16,19 +16,26 @@ final class Router
      */
     private array $routes = [];
 
+    /**
+     * @var array<string, RoutePattern>
+     */
+    private array $patterns = [];
+
     private bool $frozen = false;
 
     /**
      * @param Closure(Request): Response $handler
+     * @param array<string, string> $constraints
      */
     public function add(
         string $method,
         string $path,
         Closure $handler,
+        array $constraints = [],
     ): void {
         if ($this->frozen) {
             throw new LogicException(
-                'Cannot register routes after the router is frozen.'
+                'Cannot register routes after the router is frozen.',
             );
         }
 
@@ -39,28 +46,42 @@ final class Router
                 sprintf(
                     'Route "%s %s" is already registered.',
                     $route->method,
-                    $route->path
-                )
+                    $route->path,
+                ),
             );
         }
 
+        $pattern = new RoutePattern($route->path, $constraints);
+
         $this->routes[$route->path][$route->method] = $route;
+
+        if ($pattern->isDynamic()) {
+            $this->patterns[$route->path] = $pattern;
+        }
     }
 
     /**
      * @param Closure(Request): Response $handler
+     * @param array<string, string> $constraints
      */
-    public function get(string $path, Closure $handler): void
-    {
-        $this->add('GET', $path, $handler);
+    public function get(
+        string $path,
+        Closure $handler,
+        array $constraints = [],
+    ): void {
+        $this->add('GET', $path, $handler, $constraints);
     }
 
     /**
      * @param Closure(Request): Response $handler
+     * @param array<string, string> $constraints
      */
-    public function post(string $path, Closure $handler): void
-    {
-        $this->add('POST', $path, $handler);
+    public function post(
+        string $path,
+        Closure $handler,
+        array $constraints = [],
+    ): void {
+        $this->add('POST', $path, $handler, $constraints);
     }
 
     public function freeze(): void
@@ -75,32 +96,93 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
-        $path = $request->path();
+        $path    = $request->path();
+        $allowed = [];
 
-        if (!isset($this->routes[$path])) {
+        // 1. Exact routes have highest precedence.
+        if (isset($this->routes[$path])) {
+            $exactRoutes = $this->routes[$path];
+
+            if (isset($exactRoutes[$request->method])) {
+                return $exactRoutes[$request->method]->run(
+                    $request->withRouteParameters([]),
+                );
+            }
+
+            foreach (array_keys($exactRoutes) as $method) {
+                $allowed[$method] = true;
+            }
+        }
+
+        // 2. Match registered dynamic routes.
+        $matches = [];
+
+        foreach ($this->patterns as $registeredPath => $pattern) {
+            $parameters = $pattern->match($path);
+
+            if ($parameters === null) {
+                continue;
+            }
+
+            $matches[] = [
+                'path'       => $registeredPath,
+                'pattern'    => $pattern,
+                'parameters' => $parameters,
+            ];
+        }
+
+        usort(
+            $matches,
+            static function (array $left, array $right): int {
+                $literalComparison =
+                $right['pattern']->literalSegmentCount()
+                <=> $left['pattern']->literalSegmentCount();
+
+                if ($literalComparison !== 0) {
+                    return $literalComparison;
+                }
+
+                return $right['pattern']->constrainedParameterCount()
+                <=> $left['pattern']->constrainedParameterCount();
+            },
+        );
+
+        foreach ($matches as $match) {
+            $dynamicRoutes = $this->routes[$match['path']];
+
+            if (isset($dynamicRoutes[$request->method])) {
+                return $dynamicRoutes[$request->method]->run(
+                    $request->withRouteParameters(
+                        $match['parameters'],
+                    ),
+                );
+            }
+
+            foreach (array_keys($dynamicRoutes) as $method) {
+                $allowed[$method] = true;
+            }
+        }
+
+        // 3. Path matched, but not the requested method.
+        if ($allowed !== []) {
+            $methods = array_keys($allowed);
+            sort($methods, SORT_STRING);
+
             return new Response(
-                404,
-                ['Content-Type' => 'text/plain; charset=utf-8'],
-                'Not Found'
+                405,
+                [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                    'Allow'        => implode(', ', $methods),
+                ],
+                'Method Not Allowed',
             );
         }
 
-        $routes = $this->routes[$path];
-
-        if (isset($routes[$request->method])) {
-            return $routes[$request->method]->run($request);
-        }
-
-        $allowed = array_keys($routes);
-        sort($allowed, SORT_STRING);
-
+        // 4. No registered route matched the path.
         return new Response(
-            405,
-            [
-                'Content-Type' => 'text/plain; charset=utf-8',
-                'Allow' => implode(', ', $allowed),
-            ],
-            'Method Not Allowed'
+            404,
+            ['Content-Type' => 'text/plain; charset=utf-8'],
+            'Not Found',
         );
     }
 

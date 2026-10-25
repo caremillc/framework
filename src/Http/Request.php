@@ -18,17 +18,25 @@ final readonly class Request
     public array $headers;
 
     /**
+     * @var array<string, string>
+     */
+    public array $routeParameters;
+
+    /**
      * @param array<string, string> $headers
+     * @param array<string, string> $routeParameters
      */
     public function __construct(
         string $method = 'GET',
         string $target = '/',
         array $headers = [],
         public string $body = '',
+        array $routeParameters = [],
     ) {
-        $this->method  = self::normalizeMethod($method);
-        $this->target  = self::validateTarget($target);
-        $this->headers = self::normalizeHeaders($headers);
+        $this->method          = self::normalizeMethod($method);
+        $this->target          = self::validateTarget($target);
+        $this->headers         = self::normalizeHeaders($headers);
+        $this->routeParameters = $routeParameters;
     }
 
     public function path(): string
@@ -61,6 +69,7 @@ final readonly class Request
             $this->target,
             $this->headers,
             $this->body,
+            $this->routeParameters,
         );
     }
 
@@ -71,6 +80,7 @@ final readonly class Request
             $target,
             $this->headers,
             $this->body,
+            $this->routeParameters,
         );
     }
 
@@ -86,6 +96,7 @@ final readonly class Request
             $this->target,
             $headers,
             $this->body,
+            $this->routeParameters,
         );
     }
 
@@ -96,6 +107,7 @@ final readonly class Request
             $this->target,
             $this->headers,
             $body,
+            $this->routeParameters,
         );
     }
 
@@ -165,4 +177,49 @@ final readonly class Request
 
         return $normalized;
     }
+
+    public function routeParameter(string $name): ?string
+    {
+        return $this->routeParameters[$name] ?? null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function routeParameters(): array
+    {
+        return $this->routeParameters;
+    }
+
+
+    /**
+     * @param array<array-key, mixed> $parameters
+     */
+    public function withRouteParameters(array $parameters): self
+    {
+        $validated = [];
+
+        foreach ($parameters as $name => $value) {
+            if (
+                !is_string($name)
+                || !is_string($value)
+            ) {
+                throw new InvalidArgumentException(
+                    'Route parameters must be string pairs.',
+                );
+            }
+
+            $validated[$name] = $value;
+        }
+
+        return new self(
+            $this->method,
+            $this->target,
+            $this->headers,
+            $this->body,
+            $validated,
+        );
+    }
+
+
 }
