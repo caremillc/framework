@@ -10,12 +10,19 @@ final class RoutePattern
 {
     private readonly string $regex;
 
-    /** @var list<string> */
+    /**
+     * @var list<string>
+     */
     private readonly array $parameterNames;
 
     private readonly int $literalSegments;
 
     private readonly int $constrainedParameters;
+
+    /**
+     * @var array<string, string>
+     */
+    private readonly array $constraints;
 
     /**
      * @param array<string, string> $constraints
@@ -63,25 +70,26 @@ final class RoutePattern
                 if (isset($constraints[$name])) {
                     $constraint = $constraints[$name];
 
-                    if (
-                        $constraint === ''
-                        || str_contains($constraint, '/')
-                        || str_contains($constraint, '~')
-                        || str_contains($constraint, '(')
-                        || str_contains($constraint, ')')
-                    ) {
-                        throw new InvalidArgumentException(
-                            sprintf(
-                                'Invalid constraint for "%s".',
-                                $name,
-                            ),
-                        );
-                    }
+                    self::validateConstraint(
+                        $name,
+                        $constraint,
+                    );
 
-                    $compiled[] = '(' . $constraint . ')';
+                    /*
+                     * Named captures avoid positional-index errors.
+                     *
+                     * The custom constraint is grouped so that
+                     * alternation remains inside this parameter.
+                     *
+                     * Captured values are subsequently checked
+                     * for empty strings and path separators.
+                     */
+                    $compiled[] = '(?P<' . $name . '>(?:'
+                        . $constraint . '))';
+
                     ++$constrainedParameters;
                 } else {
-                    $compiled[] = '([^/]+)';
+                    $compiled[] = '(?P<' . $name . '>[^/]+)';
                 }
 
                 continue;
@@ -126,6 +134,49 @@ final class RoutePattern
         $this->parameterNames = $names;
         $this->literalSegments = $literalSegments;
         $this->constrainedParameters = $constrainedParameters;
+
+        ksort($constraints, SORT_STRING);
+
+        $this->constraints = $constraints;
+    }
+
+    private static function validateConstraint(
+        string $name,
+        string $constraint,
+    ): void {
+        if (
+            $constraint === ''
+            || str_contains($constraint, '/')
+            || str_contains($constraint, '~')
+            || str_contains($constraint, '(')
+            || str_contains($constraint, ')')
+        ) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Invalid constraint for "%s".',
+                    $name,
+                ),
+            );
+        }
+
+        $validationRegex = '~^(?:' . $constraint . ')$~D';
+
+        if (@preg_match($validationRegex, '') === false) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Invalid constraint expression for "%s".',
+                    $name,
+                ),
+            );
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function constraints(): array
+    {
+        return $this->constraints;
     }
 
     public function isDynamic(): bool
@@ -154,8 +205,18 @@ final class RoutePattern
 
         $parameters = [];
 
-        foreach ($this->parameterNames as $index => $name) {
-            $parameters[$name] = $matches[$index + 1];
+        foreach ($this->parameterNames as $name) {
+            $value = $matches[$name] ?? null;
+
+            if (
+                !is_string($value)
+                || $value === ''
+                || str_contains($value, '/')
+            ) {
+                return null;
+            }
+
+            $parameters[$name] = $value;
         }
 
         return $parameters;

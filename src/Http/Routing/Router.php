@@ -53,8 +53,26 @@ final class Router
 
         $pattern = new RoutePattern($route->path, $constraints);
 
+        if ($pattern->isDynamic()) {
+            $existingPattern = $this->patterns[$route->path] ?? null;
+
+            if (
+                $existingPattern !== null
+                && $existingPattern->constraints() !== $pattern->constraints()
+            ) {
+                throw new LogicException(
+                    sprintf(
+                        'Conflicting constraints for route pattern "%s".',
+                        $route->path,
+                    ),
+                );
+            }
+        }
+
+        // Register the validated route.
         $this->routes[$route->path][$route->method] = $route;
 
+        // Register its compiled pattern if dynamic.
         if ($pattern->isDynamic()) {
             $this->patterns[$route->path] = $pattern;
         }
@@ -115,12 +133,25 @@ final class Router
         }
 
         // 2. Match registered dynamic routes.
+        /**
+         * Matching dynamic routes, including their registration order.
+         *
+         * @var list<array{
+         *     path: string,
+         *     pattern: RoutePattern,
+         *     parameters: array<string, string>,
+         *     order: int
+         * }> $matches
+         */
         $matches = [];
+
+        $order = 0;
 
         foreach ($this->patterns as $registeredPath => $pattern) {
             $parameters = $pattern->match($path);
 
             if ($parameters === null) {
+                ++$order;
                 continue;
             }
 
@@ -128,9 +159,16 @@ final class Router
                 'path'       => $registeredPath,
                 'pattern'    => $pattern,
                 'parameters' => $parameters,
+                'order'      => $order,
             ];
+
+            ++$order;
         }
 
+        // Order matching patterns by:
+        // 1. More literal segments.
+        // 2. More constrained parameters.
+        // 3. Earlier registration.
         usort(
             $matches,
             static function (array $left, array $right): int {
@@ -142,8 +180,15 @@ final class Router
                     return $literalComparison;
                 }
 
-                return $right['pattern']->constrainedParameterCount()
+                $constraintComparison =
+                $right['pattern']->constrainedParameterCount()
                 <=> $left['pattern']->constrainedParameterCount();
+
+                if ($constraintComparison !== 0) {
+                    return $constraintComparison;
+                }
+
+                return $left['order'] <=> $right['order'];
             },
         );
 
