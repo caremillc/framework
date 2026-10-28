@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Careminate\Http\Routing;
 
+use Careminate\Http\Middleware\Middleware;
 use Careminate\Http\Request;
 use Careminate\Http\Response;
 use Closure;
@@ -21,23 +22,30 @@ final readonly class Route
     private Closure $handler;
 
     /**
+     * @var list<Middleware>
+     */
+    private array $middleware;
+
+    /**
      * @param Closure(Request): Response $handler
+     * @param list<Middleware> $middleware
      */
     public function __construct(
         string $method,
         string $path,
         Closure $handler,
+        array $middleware = [],
     ) {
         $normalizedMethod = strtoupper($method);
 
         if (
             preg_match(
                 "/\A[!#$%&'*+.^_`|~0-9A-Za-z-]+\z/D",
-                $method
+                $method,
             ) !== 1
         ) {
             throw new InvalidArgumentException(
-                'Invalid route method.'
+                'Invalid route method.',
             );
         }
 
@@ -49,17 +57,41 @@ final readonly class Route
             || preg_match('/[\x00-\x20\x7F]/', $path) === 1
         ) {
             throw new InvalidArgumentException(
-                'Invalid route path.'
+                'Invalid route path.',
             );
+        }
+
+        foreach ($middleware as $item) {
+            if (!$item instanceof Middleware) {
+                throw new InvalidArgumentException(
+                    'Route middleware must implement Middleware.',
+                );
+            }
         }
 
         $this->method = $normalizedMethod;
         $this->path = $path;
         $this->handler = $handler;
+        $this->middleware = array_values($middleware);
     }
 
     public function run(Request $request): Response
     {
-        return ($this->handler)($request);
+        $next = $this->handler;
+
+        foreach (array_reverse($this->middleware) as $middleware) {
+            $downstream = $next;
+
+            $next = static function (
+                Request $request,
+            ) use ($middleware, $downstream): Response {
+                return $middleware->process(
+                    $request,
+                    $downstream,
+                );
+            };
+        }
+
+        return $next($request);
     }
 }

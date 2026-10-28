@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 
 namespace Careminate\Http\Routing;
 
+use Careminate\Http\Middleware\Middleware;
 use Careminate\Http\Request;
 use Careminate\Http\Response;
 use Closure;
@@ -28,6 +29,13 @@ final class Router
      * @var array<string, RoutePattern>
      */
     private array $namedRoutes = [];
+
+    private string $groupPrefix = '';
+    /**
+     * @var list<Middleware>
+     */
+    private array $groupMiddleware = [];
+
     /**
      * @param Closure(Request): Response $handler
      * @param array<string, string> $constraints
@@ -45,7 +53,14 @@ final class Router
             );
         }
 
-        $route = new Route($method, $path, $handler);
+        $resolvedPath = $this->groupPrefix . $path;
+
+        $route = new Route(
+            $method,
+            $resolvedPath,
+            $handler,
+            $this->groupMiddleware,
+        );
 
         if (isset($this->routes[$route->path][$route->method])) {
             throw new LogicException(
@@ -109,8 +124,6 @@ final class Router
             $this->namedRoutes[$name] = $pattern;
         }
     }
-
-
 
     /**
      * @param Closure(Request): Response $handler
@@ -209,16 +222,16 @@ final class Router
             $matches,
             static function (array $left, array $right): int {
                 $literalComparison =
-                    $right['pattern']->literalSegmentCount()
-                    <=> $left['pattern']->literalSegmentCount();
+                $right['pattern']->literalSegmentCount()
+                <=> $left['pattern']->literalSegmentCount();
 
                 if ($literalComparison !== 0) {
                     return $literalComparison;
                 }
 
                 $constraintComparison =
-                    $right['pattern']->constrainedParameterCount()
-                    <=> $left['pattern']->constrainedParameterCount();
+                $right['pattern']->constrainedParameterCount()
+                <=> $left['pattern']->constrainedParameterCount();
 
                 if ($constraintComparison !== 0) {
                     return $constraintComparison;
@@ -299,6 +312,67 @@ final class Router
         }
 
         return $pattern->generate($parameters);
+    }
+
+    /**
+     * @param Closure(self): void $callback
+     * @param list<Middleware> $middleware
+     */
+    public function group(
+        string $prefix,
+        Closure $callback,
+        array $middleware = [],
+    ): void {
+        if ($this->frozen) {
+            throw new LogicException(
+                'Cannot register route groups after the router is frozen.',
+            );
+        }
+
+        if (
+            $prefix !== ''
+            && (
+                $prefix[0] !== '/'
+                || (
+                    $prefix !== '/'
+                    && str_ends_with($prefix, '/')
+                )
+                || str_contains($prefix, '?')
+                || str_contains($prefix, '#')
+                || preg_match('/[\x00-\x20\x7F]/', $prefix) === 1
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid route group prefix.',
+            );
+        }
+
+        foreach ($middleware as $item) {
+            if (! $item instanceof Middleware) {
+                throw new InvalidArgumentException(
+                    'Route group middleware must implement Middleware.',
+                );
+            }
+        }
+
+        $previousPrefix     = $this->groupPrefix;
+        $previousMiddleware = $this->groupMiddleware;
+
+        if ($prefix !== '' && $prefix !== '/') {
+            $this->groupPrefix .= $prefix;
+        }
+
+        $this->groupMiddleware = [
+             ...$previousMiddleware,
+            ...array_values($middleware),
+        ];
+
+        try {
+            $callback($this);
+        } finally {
+            $this->groupPrefix     = $previousPrefix;
+            $this->groupMiddleware = $previousMiddleware;
+        }
     }
 
 }
