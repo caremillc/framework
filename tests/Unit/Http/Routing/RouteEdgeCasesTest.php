@@ -28,7 +28,7 @@ final class RouteEdgeCasesTest extends TestCase
         $router->get(
             '/users/42',
             static fn (Request $request): Response =>
-                new Response(200, [], 'without-slash'),
+            new Response(200, [], 'without-slash'),
         );
 
         $response = $router->dispatch(
@@ -38,12 +38,11 @@ final class RouteEdgeCasesTest extends TestCase
         self::assertSame(404, $response->status);
     }
 
-    public function testEncodedSlashRemainsWithinOneParameter(): void
+    public function testEncodedSlashIsRejected(): void
     {
         $pattern = new RoutePattern('/files/{name}');
 
-        self::assertSame(
-            ['name' => 'a%2Fb'],
+        self::assertNull(
             $pattern->match('/files/a%2Fb'),
         );
     }
@@ -57,12 +56,12 @@ final class RouteEdgeCasesTest extends TestCase
         );
     }
 
-    public function testEncodedSpaceRemainsEncoded(): void
+    public function testEncodedSpaceIsDecoded(): void
     {
         $pattern = new RoutePattern('/files/{name}');
 
         self::assertSame(
-            ['name' => 'my%20file'],
+            ['name' => 'my file'],
             $pattern->match('/files/my%20file'),
         );
     }
@@ -74,7 +73,7 @@ final class RouteEdgeCasesTest extends TestCase
         $router->get(
             '/users/{id}',
             static fn (Request $request): Response =>
-                new Response(200, [], 'get'),
+            new Response(200, [], 'get'),
         );
 
         $response = $router->dispatch(
@@ -96,7 +95,7 @@ final class RouteEdgeCasesTest extends TestCase
         $router->get(
             '/users/{id}',
             static fn (Request $request): Response =>
-                new Response(200, [], 'found'),
+            new Response(200, [], 'found'),
         );
 
         $response = $router->dispatch(
@@ -113,11 +112,11 @@ final class RouteEdgeCasesTest extends TestCase
         $router->get(
             '/users/{id}',
             static fn (Request $request): Response =>
-                new Response(
-                    200,
-                    [],
-                    $request->routeParameter('id') ?? '',
-                ),
+            new Response(
+                200,
+                [],
+                $request->routeParameter('id') ?? '',
+            ),
         );
 
         $first = $router->dispatch(
@@ -139,13 +138,13 @@ final class RouteEdgeCasesTest extends TestCase
         $router->get(
             '/users/{id}',
             static fn (Request $request): Response =>
-                new Response(200, [], 'dynamic'),
+            new Response(200, [], 'dynamic'),
         );
 
         $router->get(
             '/users/me',
             static fn (Request $request): Response =>
-                new Response(200, [], 'static'),
+            new Response(200, [], 'static'),
         );
 
         $response = $router->dispatch(
@@ -155,14 +154,15 @@ final class RouteEdgeCasesTest extends TestCase
         self::assertSame('static', $response->body);
     }
 
-    public function testConstrainedRouteRejectsEncodedCharacters(): void
+    public function testConstrainedRouteValidatesDecodedCharacters(): void
     {
         $pattern = new RoutePattern(
             '/users/{id}',
             ['id' => '[0-9]+'],
         );
 
-        self::assertNull(
+        self::assertSame(
+            ['id' => '42'],
             $pattern->match('/users/%34%32'),
         );
 

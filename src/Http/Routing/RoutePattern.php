@@ -84,8 +84,7 @@ final class RoutePattern
                      * Captured values are subsequently checked
                      * for empty strings and path separators.
                      */
-                    $compiled[] = '(?P<' . $name . '>(?:'
-                        . $constraint . '))';
+                    $compiled[] = '(?P<' . $name . '>[^/]+)';
 
                     ++$constrainedParameters;
                 } else {
@@ -194,6 +193,30 @@ final class RoutePattern
         return $this->constrainedParameters;
     }
 
+    private function isValidParameterValue(
+        string $name,
+        string $value,
+    ): bool {
+        if (
+            $value === ''
+            || str_contains($value, '/')
+            || str_contains($value, '\\')
+            || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
+            || preg_match('//u', $value) !== 1
+        ) {
+            return false;
+        }
+
+        if (!isset($this->constraints[$name])) {
+            return true;
+        }
+
+        return preg_match(
+            '~^(?:' . $this->constraints[$name] . ')$~D',
+            $value,
+        ) === 1;
+    }
+
     /**
      * @return array<string, string>|null
      */
@@ -206,13 +229,24 @@ final class RoutePattern
         $parameters = [];
 
         foreach ($this->parameterNames as $name) {
-            $value = $matches[$name] ?? null;
+            $encoded = $matches[$name] ?? null;
+
+            if (!is_string($encoded) || $encoded === '') {
+                return null;
+            }
 
             if (
-                !is_string($value)
-                || $value === ''
-                || str_contains($value, '/')
+                preg_match(
+                    '/%(?![0-9A-Fa-f]{2})/',
+                    $encoded,
+                ) === 1
             ) {
+                return null;
+            }
+
+            $value = rawurldecode($encoded);
+
+            if (!$this->isValidParameterValue($name, $value)) {
                 return null;
             }
 
@@ -221,4 +255,83 @@ final class RoutePattern
 
         return $parameters;
     }
+
+
+
+    /**
+    * @return list<string>
+    */
+    public function parameterNames(): array
+    {
+        return $this->parameterNames;
+    }
+
+    /**
+     * @param array<string, string|int> $parameters
+     */
+    public function generate(array $parameters = []): string
+    {
+        foreach ($this->parameterNames as $name) {
+            if (!array_key_exists($name, $parameters)) {
+                throw new InvalidArgumentException(
+                    sprintf('Missing route parameter "%s".', $name),
+                );
+            }
+
+            $value = (string) $parameters[$name];
+
+            if (!$this->isValidParameterValue($name, $value)) {
+                if (
+                    isset($this->constraints[$name])
+                    && $value !== ''
+                    && !str_contains($value, '/')
+                    && !str_contains($value, '\\')
+                    && preg_match('/[\x00-\x1F\x7F]/', $value) !== 1
+                    && preg_match('//u', $value) === 1
+                ) {
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'Route parameter "%s" violates its constraint.',
+                            $name,
+                        ),
+                    );
+                }
+
+                throw new InvalidArgumentException(
+                    sprintf('Invalid route parameter "%s".', $name),
+                );
+            }
+        }
+
+        foreach (array_keys($parameters) as $name) {
+            if (!in_array($name, $this->parameterNames, true)) {
+                throw new InvalidArgumentException(
+                    sprintf('Unknown route parameter "%s".', $name),
+                );
+            }
+        }
+
+        $segments = explode('/', $this->pattern);
+
+        foreach ($segments as &$segment) {
+            if (
+                preg_match(
+                    '/^\{([A-Za-z_][A-Za-z0-9_]*)\}$/D',
+                    $segment,
+                    $matches,
+                ) !== 1
+            ) {
+                continue;
+            }
+
+            $segment = rawurlencode(
+                (string) $parameters[$matches[1]],
+            );
+        }
+
+        unset($segment);
+
+        return implode('/', $segments);
+    }
+
 }

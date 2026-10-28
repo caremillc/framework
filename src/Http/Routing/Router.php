@@ -1,12 +1,13 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Careminate\Http\Routing;
 
 use Careminate\Http\Request;
 use Careminate\Http\Response;
 use Closure;
+use InvalidArgumentException;
 use LogicException;
 
 final class Router
@@ -24,6 +25,10 @@ final class Router
     private bool $frozen = false;
 
     /**
+     * @var array<string, RoutePattern>
+     */
+    private array $namedRoutes = [];
+    /**
      * @param Closure(Request): Response $handler
      * @param array<string, string> $constraints
      */
@@ -32,6 +37,7 @@ final class Router
         string $path,
         Closure $handler,
         array $constraints = [],
+        ?string $name = null,
     ): void {
         if ($this->frozen) {
             throw new LogicException(
@@ -49,6 +55,29 @@ final class Router
                     $route->path,
                 ),
             );
+        }
+
+        if ($name !== null) {
+            if (
+                $name === ''
+                || preg_match(
+                    '/\A[A-Za-z_][A-Za-z0-9_.-]*\z/D',
+                    $name,
+                ) !== 1
+            ) {
+                throw new InvalidArgumentException(
+                    'Invalid route name.',
+                );
+            }
+
+            if (isset($this->namedRoutes[$name])) {
+                throw new LogicException(
+                    sprintf(
+                        'Route name "%s" is already registered.',
+                        $name,
+                    ),
+                );
+            }
         }
 
         $pattern = new RoutePattern($route->path, $constraints);
@@ -69,14 +98,19 @@ final class Router
             }
         }
 
-        // Register the validated route.
+        // All validation is complete before state mutation.
         $this->routes[$route->path][$route->method] = $route;
 
-        // Register its compiled pattern if dynamic.
         if ($pattern->isDynamic()) {
             $this->patterns[$route->path] = $pattern;
         }
+
+        if ($name !== null) {
+            $this->namedRoutes[$name] = $pattern;
+        }
     }
+
+
 
     /**
      * @param Closure(Request): Response $handler
@@ -86,8 +120,9 @@ final class Router
         string $path,
         Closure $handler,
         array $constraints = [],
+        ?string $name = null,
     ): void {
-        $this->add('GET', $path, $handler, $constraints);
+        $this->add('GET', $path, $handler, $constraints, $name);
     }
 
     /**
@@ -98,8 +133,9 @@ final class Router
         string $path,
         Closure $handler,
         array $constraints = [],
+        ?string $name = null,
     ): void {
-        $this->add('POST', $path, $handler, $constraints);
+        $this->add('POST', $path, $handler, $constraints, $name);
     }
 
     public function freeze(): void
@@ -173,16 +209,16 @@ final class Router
             $matches,
             static function (array $left, array $right): int {
                 $literalComparison =
-                $right['pattern']->literalSegmentCount()
-                <=> $left['pattern']->literalSegmentCount();
+                    $right['pattern']->literalSegmentCount()
+                    <=> $left['pattern']->literalSegmentCount();
 
                 if ($literalComparison !== 0) {
                     return $literalComparison;
                 }
 
                 $constraintComparison =
-                $right['pattern']->constrainedParameterCount()
-                <=> $left['pattern']->constrainedParameterCount();
+                    $right['pattern']->constrainedParameterCount()
+                    <=> $left['pattern']->constrainedParameterCount();
 
                 if ($constraintComparison !== 0) {
                     return $constraintComparison;
@@ -241,4 +277,28 @@ final class Router
 
         return $count;
     }
+
+    public function hasName(string $name): bool
+    {
+        return isset($this->namedRoutes[$name]);
+    }
+
+    /**
+     * @param array<string, string|int> $parameters
+     */
+    public function url(
+        string $name,
+        array $parameters = [],
+    ): string {
+        $pattern = $this->namedRoutes[$name] ?? null;
+
+        if ($pattern === null) {
+            throw new InvalidArgumentException(
+                sprintf('Unknown route name "%s".', $name),
+            );
+        }
+
+        return $pattern->generate($parameters);
+    }
+
 }
