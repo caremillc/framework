@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare(strict_types=1);
 
 namespace Careminate\Http\Routing;
 
@@ -31,6 +31,7 @@ final class Router
     private array $namedRoutes = [];
 
     private string $groupPrefix = '';
+
     /**
      * @var list<Middleware>
      */
@@ -95,7 +96,10 @@ final class Router
             }
         }
 
-        $pattern = new RoutePattern($route->path, $constraints);
+        $pattern = new RoutePattern(
+            $route->path,
+            $constraints,
+        );
 
         if ($pattern->isDynamic()) {
             $existingPattern = $this->patterns[$route->path] ?? null;
@@ -113,7 +117,7 @@ final class Router
             }
         }
 
-        // All validation is complete before state mutation.
+        // Commit registration only after all validation succeeds.
         $this->routes[$route->path][$route->method] = $route;
 
         if ($pattern->isDynamic()) {
@@ -135,7 +139,13 @@ final class Router
         array $constraints = [],
         ?string $name = null,
     ): void {
-        $this->add('GET', $path, $handler, $constraints, $name);
+        $this->add(
+            'GET',
+            $path,
+            $handler,
+            $constraints,
+            $name,
+        );
     }
 
     /**
@@ -148,7 +158,13 @@ final class Router
         array $constraints = [],
         ?string $name = null,
     ): void {
-        $this->add('POST', $path, $handler, $constraints, $name);
+        $this->add(
+            'POST',
+            $path,
+            $handler,
+            $constraints,
+            $name,
+        );
     }
 
     public function freeze(): void
@@ -163,10 +179,10 @@ final class Router
 
     public function dispatch(Request $request): Response
     {
-        $path    = $request->path();
+        $path = $request->path();
         $allowed = [];
 
-        // 1. Exact routes have highest precedence.
+        // Exact routes take precedence over dynamic routes.
         if (isset($this->routes[$path])) {
             $exactRoutes = $this->routes[$path];
 
@@ -181,10 +197,7 @@ final class Router
             }
         }
 
-        // 2. Match registered dynamic routes.
         /**
-         * Matching dynamic routes, including their registration order.
-         *
          * @var list<array{
          *     path: string,
          *     pattern: RoutePattern,
@@ -201,37 +214,35 @@ final class Router
 
             if ($parameters === null) {
                 ++$order;
+
                 continue;
             }
 
             $matches[] = [
-                'path'       => $registeredPath,
-                'pattern'    => $pattern,
+                'path' => $registeredPath,
+                'pattern' => $pattern,
                 'parameters' => $parameters,
-                'order'      => $order,
+                'order' => $order,
             ];
 
             ++$order;
         }
 
-        // Order matching patterns by:
-        // 1. More literal segments.
-        // 2. More constrained parameters.
-        // 3. Earlier registration.
+        // More specific dynamic routes take precedence.
         usort(
             $matches,
             static function (array $left, array $right): int {
                 $literalComparison =
-                $right['pattern']->literalSegmentCount()
-                <=> $left['pattern']->literalSegmentCount();
+                    $right['pattern']->literalSegmentCount()
+                    <=> $left['pattern']->literalSegmentCount();
 
                 if ($literalComparison !== 0) {
                     return $literalComparison;
                 }
 
                 $constraintComparison =
-                $right['pattern']->constrainedParameterCount()
-                <=> $left['pattern']->constrainedParameterCount();
+                    $right['pattern']->constrainedParameterCount()
+                    <=> $left['pattern']->constrainedParameterCount();
 
                 if ($constraintComparison !== 0) {
                     return $constraintComparison;
@@ -257,7 +268,6 @@ final class Router
             }
         }
 
-        // 3. Path matched, but not the requested method.
         if ($allowed !== []) {
             $methods = array_keys($allowed);
             sort($methods, SORT_STRING);
@@ -266,13 +276,12 @@ final class Router
                 405,
                 [
                     'Content-Type' => 'text/plain; charset=utf-8',
-                    'Allow'        => implode(', ', $methods),
+                    'Allow' => implode(', ', $methods),
                 ],
                 'Method Not Allowed',
             );
         }
 
-        // 4. No registered route matched the path.
         return new Response(
             404,
             ['Content-Type' => 'text/plain; charset=utf-8'],
@@ -307,7 +316,10 @@ final class Router
 
         if ($pattern === null) {
             throw new InvalidArgumentException(
-                sprintf('Unknown route name "%s".', $name),
+                sprintf(
+                    'Unknown route name "%s".',
+                    $name,
+                ),
             );
         }
 
@@ -316,7 +328,7 @@ final class Router
 
     /**
      * @param Closure(self): void $callback
-     * @param list<Middleware> $middleware
+     * @param array<array-key, mixed> $middleware
      */
     public function group(
         string $prefix,
@@ -347,15 +359,19 @@ final class Router
             );
         }
 
+        $validatedMiddleware = [];
+
         foreach ($middleware as $item) {
-            if (! $item instanceof Middleware) {
+            if (!$item instanceof Middleware) {
                 throw new InvalidArgumentException(
                     'Route group middleware must implement Middleware.',
                 );
             }
+
+            $validatedMiddleware[] = $item;
         }
 
-        $previousPrefix     = $this->groupPrefix;
+        $previousPrefix = $this->groupPrefix;
         $previousMiddleware = $this->groupMiddleware;
 
         if ($prefix !== '' && $prefix !== '/') {
@@ -363,16 +379,15 @@ final class Router
         }
 
         $this->groupMiddleware = [
-             ...$previousMiddleware,
-            ...array_values($middleware),
+            ...$previousMiddleware,
+            ...$validatedMiddleware,
         ];
 
         try {
             $callback($this);
         } finally {
-            $this->groupPrefix     = $previousPrefix;
+            $this->groupPrefix = $previousPrefix;
             $this->groupMiddleware = $previousMiddleware;
         }
     }
-
 }

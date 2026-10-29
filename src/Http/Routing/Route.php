@@ -28,7 +28,7 @@ final readonly class Route
 
     /**
      * @param Closure(Request): Response $handler
-     * @param list<Middleware> $middleware
+     * @param array<array-key, mixed> $middleware
      */
     public function __construct(
         string $method,
@@ -61,18 +61,22 @@ final readonly class Route
             );
         }
 
+        $validatedMiddleware = [];
+
         foreach ($middleware as $item) {
             if (!$item instanceof Middleware) {
                 throw new InvalidArgumentException(
                     'Route middleware must implement Middleware.',
                 );
             }
+
+            $validatedMiddleware[] = $item;
         }
 
         $this->method = $normalizedMethod;
         $this->path = $path;
         $this->handler = $handler;
-        $this->middleware = array_values($middleware);
+        $this->middleware = $validatedMiddleware;
     }
 
     public function run(Request $request): Response
