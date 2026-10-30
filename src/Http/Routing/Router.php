@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Careminate\Http\Routing;
 
@@ -316,7 +316,7 @@ final class Router
 
     /**
      * @param Closure(self): void $callback
-     * @param list<Middleware> $middleware
+     * @param array<array-key, mixed> $middleware
      */
     public function group(
         string $prefix,
@@ -347,12 +347,16 @@ final class Router
             );
         }
 
+        $validatedMiddleware = [];
+
         foreach ($middleware as $item) {
             if (! $item instanceof Middleware) {
                 throw new InvalidArgumentException(
                     'Route group middleware must implement Middleware.',
                 );
             }
+
+            $validatedMiddleware[] = $item;
         }
 
         $previousPrefix     = $this->groupPrefix;
@@ -364,7 +368,7 @@ final class Router
 
         $this->groupMiddleware = [
              ...$previousMiddleware,
-            ...array_values($middleware),
+            ...$validatedMiddleware,
         ];
 
         try {
