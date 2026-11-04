@@ -1,0 +1,207 @@
+{
+    "benchmark": "careminate_http_kernel_v1",
+    "generated_at": "2026-11-01T14:17:35+00:00",
+    "environment": {
+        "php_version": "8.5.11",
+        "php_sapi": "cli",
+        "php_os": "Windows",
+        "xdebug_loaded": false,
+        "opcache_enabled_cli": "0",
+        "memory_limit": "512M",
+        "peak_allocated_memory_bytes": 4194304
+    },
+    "configuration": {
+        "iterations": 1000,
+        "samples": 7,
+        "warmup": 200
+    },
+    "results": {
+        "static": {
+            "setup_ms": 17.4536,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.008259,
+            "p95_ms": 0.009231,
+            "requests_per_second": 121074.17,
+            "sample_ms": [
+                0.006181,
+                0.008043,
+                0.008258,
+                0.008259,
+                0.008312,
+                0.008693,
+                0.009231
+            ]
+        },
+        "dynamic": {
+            "setup_ms": 0.2108,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.015909,
+            "p95_ms": 0.016991,
+            "requests_per_second": 62856.71,
+            "sample_ms": [
+                0.009952,
+                0.012464,
+                0.012604,
+                0.015909,
+                0.015978,
+                0.016535,
+                0.016991
+            ]
+        },
+        "middleware_1": {
+            "setup_ms": 1.0085,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.008286,
+            "p95_ms": 0.011706,
+            "requests_per_second": 120685.49,
+            "sample_ms": [
+                0.007665,
+                0.008057,
+                0.008213,
+                0.008286,
+                0.010128,
+                0.011589,
+                0.011706
+            ]
+        },
+        "middleware_3": {
+            "setup_ms": 0.0708,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.010742,
+            "p95_ms": 0.013208,
+            "requests_per_second": 93092.53,
+            "sample_ms": [
+                0.007658,
+                0.009955,
+                0.010393,
+                0.010742,
+                0.011111,
+                0.01166,
+                0.013208
+            ]
+        },
+        "middleware_5": {
+            "setup_ms": 0.0958,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.012848,
+            "p95_ms": 0.015021,
+            "requests_per_second": 77831.31,
+            "sample_ms": [
+                0.011992,
+                0.012383,
+                0.012467,
+                0.012848,
+                0.012911,
+                0.013048,
+                0.015021
+            ]
+        },
+        "routes_1": {
+            "setup_ms": 0.1462,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.010352,
+            "p95_ms": 0.012956,
+            "requests_per_second": 96595.96,
+            "sample_ms": [
+                0.00964,
+                0.009778,
+                0.010113,
+                0.010352,
+                0.010527,
+                0.01105,
+                0.012956
+            ]
+        },
+        "routes_100": {
+            "setup_ms": 2.5385,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.011746,
+            "p95_ms": 0.013363,
+            "requests_per_second": 85132.47,
+            "sample_ms": [
+                0.010655,
+                0.011162,
+                0.011403,
+                0.011746,
+                0.011828,
+                0.01233,
+                0.013363
+            ]
+        },
+        "routes_500": {
+            "setup_ms": 19.3451,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.008685,
+            "p95_ms": 0.012188,
+            "requests_per_second": 115134.42,
+            "sample_ms": [
+                0.004691,
+                0.006294,
+                0.006672,
+                0.008685,
+                0.011032,
+                0.011891,
+                0.012188
+            ]
+        },
+        "routes_1000": {
+            "setup_ms": 20.3389,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.011015,
+            "p95_ms": 0.019153,
+            "requests_per_second": 90784.47,
+            "sample_ms": [
+                0.008882,
+                0.009778,
+                0.009903,
+                0.011015,
+                0.013028,
+                0.014174,
+                0.019153
+            ]
+        },
+        "not_found": {
+            "setup_ms": 0.117,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.010023,
+            "p95_ms": 0.018231,
+            "requests_per_second": 99773.51,
+            "sample_ms": [
+                0.003886,
+                0.006856,
+                0.007881,
+                0.010023,
+                0.012463,
+                0.017696,
+                0.018231
+            ]
+        },
+        "method_not_allowed": {
+            "setup_ms": 0.0764,
+            "allocated_memory_bytes": 4194304,
+            "allocated_delta_bytes": 0,
+            "median_ms": 0.009977,
+            "p95_ms": 0.011008,
+            "requests_per_second": 100230.53,
+            "sample_ms": [
+                0.00899,
+                0.009174,
+                0.009955,
+                0.009977,
+                0.010408,
+                0.010579,
+                0.011008
+            ]
+        }
+    }
+}

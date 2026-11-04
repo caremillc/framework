@@ -1,0 +1,137 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Careminate Framework CLI entry point.
+ *
+ * Supports direct checkouts and Composer-installed packages.
+ *
+ * Optional commands are constructed lazily so a failure in
+ * one command cannot prevent unrelated commands from running.
+ */
+
+$autoload = null;
+
+foreach (
+    [
+        $GLOBALS['_composer_autoload_path'] ?? null,
+        __DIR__ . '/vendor/autoload.php',
+        dirname(__DIR__, 2) . '/autoload.php',
+    ] as $candidate
+) {
+    if (
+        is_string($candidate)
+        && is_file($candidate)
+    ) {
+        $autoload = $candidate;
+
+        break;
+    }
+}
+
+if ($autoload === null) {
+    fwrite(
+        STDERR,
+        "Careminate: Composer autoload missing; run composer install.\n",
+    );
+
+    exit(78);
+}
+
+try {
+    require $autoload;
+
+    $console = new \Careminate\Console\ConsoleApplication();
+
+    /*
+     * ABOUT
+     *
+     * Do not construct AboutCommand during startup.
+     */
+    $console->register(
+        'about',
+        'Show framework and PHP runtime information',
+        static function (
+            array $arguments,
+        ): \Careminate\Console\ConsoleResult {
+            $command = new \Careminate\Console\AboutCommand();
+
+            return $command($arguments);
+        },
+    );
+
+    /*
+     * ROUTE:LIST
+     *
+     * The standalone framework package has no application routes.
+     *
+     * Application route loading belongs to the separate
+     * application-level launcher.
+     */
+    $console->register(
+        'route:list',
+        'List registered HTTP routes',
+        static function (
+            array $arguments,
+        ): \Careminate\Console\ConsoleResult {
+            // Validate arguments before constructing a Router.
+            $usageError =
+                \Careminate\Console\RouteListCommand::usageError(
+                    $arguments,
+                );
+
+            if ($usageError !== null) {
+                return $usageError;
+            }
+
+            $router = new \Careminate\Http\Routing\Router();
+
+            $command = new \Careminate\Console\RouteListCommand(
+                $router,
+            );
+
+            return $command($arguments);
+        },
+    );
+
+    /*
+     * COMMAND DISPATCH
+     */
+    $result = $console->run(
+        array_slice($argv, 1),
+    );
+
+    /*
+     * OUTPUT EMISSION
+     *
+     * Standard output and standard error remain separate.
+     */
+    if ($result->stdout !== '') {
+        fwrite(
+            STDOUT,
+            $result->stdout,
+        );
+    }
+
+    if ($result->stderr !== '') {
+        fwrite(
+            STDERR,
+            $result->stderr,
+        );
+    }
+
+    exit($result->exitCode);
+} catch (\Throwable) {
+    /*
+     * Do not expose internal exception messages, filesystem
+     * paths or potentially sensitive values to CLI callers.
+     */
+    fwrite(
+        STDERR,
+        "Careminate: Internal console error.\n",
+    );
+
+    exit(70);
+}
