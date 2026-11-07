@@ -137,7 +137,13 @@
             "@php -l src/Database/Migrations/MigrationCatalog.php",
             "@php -l src/Database/Migrations/MySqlMigrationRunner.php",
             "@php -l tests/Unit/Database/MigrationCatalogTest.php",
-            "@php -l tests/Integration/Database/MySqlMigrationIntegrationTest.php"
+            "@php -l tests/Integration/Database/MySqlMigrationIntegrationTest.php",
+            "@php -l src/Database/SqlConnection.php",
+            "@php -l src/Database/SqlResult.php",
+            "@php -l src/Database/SqlBindings.php",
+            "@php -l src/Database/QueryException.php",
+            "@php -l src/Database/TransactionException.php",
+            "@php -l src/Database/MySql/MySqlConnection.php"
         ],
         "check": [
             "composer validate --strict",
